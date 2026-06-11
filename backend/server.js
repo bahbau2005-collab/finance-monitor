@@ -29,9 +29,19 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 
 // ============================================
-// DATABASE CONNECTION
+// DATABASE CONNECTION (lazy, aman untuk serverless)
+// Pastikan koneksi siap sebelum menangani request data.
 // ============================================
-connectDB();
+app.use(async (req, res, next) => {
+  // Endpoint ringan yang tidak butuh DB boleh lewat tanpa menunggu koneksi
+  if (req.path === '/' || req.path === '/api/health') return next();
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    res.status(503).json({ success: false, message: 'Database belum siap, coba lagi sebentar.' });
+  }
+});
 
 // ============================================
 // API ROUTES
@@ -86,13 +96,19 @@ app.use((req, res) => {
 
 // ============================================
 // START SERVER
+// Di lokal: jalankan app.listen seperti biasa.
+// Di Vercel (serverless): app cukup di-export, jangan listen.
 // ============================================
-app.listen(PORT, () => {
-  console.log(`
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`
 ╔════════════════════════════════════════╗
 ║   🚀 Keuangan API Server Running      ║
 ║   Port: ${PORT}                           ║
 ║   Environment: ${process.env.NODE_ENV}           ║
 ╚════════════════════════════════════════╝
   `);
-});
+  });
+}
+
+module.exports = app;

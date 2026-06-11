@@ -1,7 +1,5 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { debtService } from '../services/api'
-import * as XLSX from 'xlsx'
-import imageCompression from 'browser-image-compression'
 
 function HutangPiutang() {
   const [debts, setDebts] = useState([])
@@ -14,26 +12,103 @@ function HutangPiutang() {
     date: new Date().toISOString().split('T')[0],
     reason: '',
     status: 'onprogress',
-    photoUrl: '',
   })
 
+  const [formErrors, setFormErrors] = useState({})
+  const [formMsg, setFormMsg] = useState(null) // { type: 'success' | 'error', text }
   const [editingId, setEditingId] = useState(null)
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [paymentForId, setPaymentForId] = useState(null)
+  const [paymentEdit, setPaymentEdit] = useState(null)
   const [paymentForm, setPaymentForm] = useState({ amount: '', date: new Date().toISOString().split('T')[0], note: '' })
-  const [viewPhotoUrl, setViewPhotoUrl] = useState(null)
-  const fileInputRef = useRef(null)
+  const [expandedPaymentId, setExpandedPaymentId] = useState(null)
+  const [expandedReason, setExpandedReason] = useState(new Set())
 
-  const clearPhoto = () => {
-    setForm(prev => ({ ...prev, photoUrl: '' }))
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
+  const toggleReason = (id) => {
+    setExpandedReason(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
   }
+
+  const [filters, setFilters] = useState({ query: '', type: '', status: '' })
+  const [sort, setSort] = useState({ field: '', direction: 'asc' })
 
   useEffect(() => {
     fetchDebts()
   }, [])
+
+  const filteredAndSortedDebts = useMemo(() => {
+    let items = [...debts]
+
+    // FILTER
+    const query = (filters.query || '').toLowerCase().trim()
+    if (query) {
+      items = items.filter(d => {
+        const name = String(d.personName || '').toLowerCase()
+        const reason = String(d.reason || '').toLowerCase()
+        return name.includes(query) || reason.includes(query)
+      })
+    }
+
+    if (filters.type) {
+      items = items.filter(d => d.type === filters.type)
+    }
+
+    if (filters.status) {
+      items = items.filter(d => d.status === filters.status)
+    }
+
+    // SORT
+    if (sort.field) {
+      const compare = (a, b) => {
+        switch (sort.field) {
+          case 'type':
+            return String(a.type || '').localeCompare(String(b.type || ''), undefined, { sensitivity: 'base' })
+          case 'name':
+            return String(a.personName || '').localeCompare(String(b.personName || ''), undefined, { sensitivity: 'base' })
+          case 'amount':
+            return (Number(a.amount) || 0) - (Number(b.amount) || 0)
+          case 'paid':
+            return (Number(a.paid) || 0) - (Number(b.paid) || 0)
+          case 'remaining':
+            return (Number(a.amount || 0) - Number(a.paid || 0)) - (Number(b.amount || 0) - Number(b.paid || 0))
+          case 'date':
+            return new Date(a.date) - new Date(b.date)
+          case 'status':
+            return String(a.status || '').localeCompare(String(b.status || ''), undefined, { sensitivity: 'base' })
+          default:
+            return 0
+        }
+      }
+      items.sort((a, b) => (sort.direction === 'asc' ? compare(a, b) : -compare(a, b)))
+    }
+
+    return items
+  }, [debts, filters, sort])
+
+  const handleFilterChange = (name, value) => {
+    setFilters(prev => ({ ...prev, [name]: value }))
+  }
+
+  const resetFilters = () => {
+    setFilters({ query: '', type: '', status: '' })
+  }
+
+  const toggleSort = (field) => {
+    setSort(prev => {
+      if (prev.field === field) {
+        return { field, direction: prev.direction === 'asc' ? 'desc' : 'asc' }
+      }
+      return { field, direction: 'asc' }
+    })
+  }
+
+  const getSortIcon = (field) => {
+    if (sort.field !== field) return null
+    return sort.direction === 'asc' ? '↑' : '↓'
+  }
 
   const fetchDebts = async () => {
     try {
@@ -48,44 +123,69 @@ function HutangPiutang() {
     }
   }
 
-  const handleChange = async (e) => {
-    const { name, value, files } = e.target
-    if (name === 'photo' && files && files[0]) {
-      const file = files[0]
-      try {
-        // Kompresi foto untuk hemat storage
-        const options = {
-          maxSizeMB: 0.5,           // Maksimal 500KB
-          maxWidthOrHeight: 1024,   // Maksimal resolusi 1024px
-          useWebWorker: true,
-          fileType: 'image/jpeg'    // Convert ke JPEG untuk ukuran lebih kecil
-        }
-        const compressedFile = await imageCompression(file, options)
-        
-        // Convert compressed image ke base64
-        const reader = new FileReader()
-        reader.onload = (event) => {
-          setForm(prev => ({ ...prev, photoUrl: event.target.result }))
-        }
-        reader.readAsDataURL(compressedFile)
-      } catch (error) {
-        console.error('Error compressing image:', error)
-        alert('Gagal mengkompresi foto, coba foto lain')
-      }
-    } else {
-      setForm(prev => ({ ...prev, [name]: value }))
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    setForm(prev => ({ ...prev, [name]: value }))
+    // Hapus error field ini begitu user mulai memperbaikinya
+    setFormErrors(prev => {
+      if (!prev[name]) return prev
+      const next = { ...prev }
+      delete next[name]
+      return next
+    })
+  }
+
+  // Validasi form, kembalikan object error per-field (kosong = valid)
+  const validateForm = () => {
+    const errors = {}
+    const today = new Date(); today.setHours(23, 59, 59, 999)
+
+    if (!form.personName || !form.personName.trim()) {
+      errors.personName = 'Nama orang wajib diisi'
+    } else if (form.personName.trim().length < 2) {
+      errors.personName = 'Nama minimal 2 karakter'
     }
+
+    if (form.amount === '' || form.amount === null) {
+      errors.amount = 'Jumlah wajib diisi'
+    } else if (Number.isNaN(Number(form.amount))) {
+      errors.amount = 'Jumlah harus berupa angka'
+    } else if (Number(form.amount) <= 0) {
+      errors.amount = 'Jumlah harus lebih besar dari 0'
+    }
+
+    if (!form.date) {
+      errors.date = 'Tanggal wajib diisi'
+    } else if (new Date(form.date) > today) {
+      errors.date = 'Tanggal tidak boleh melebihi hari ini'
+    }
+
+    if (form.reason && form.reason.length > 500) {
+      errors.reason = 'Keterangan maksimal 500 karakter'
+    }
+
+    return errors
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setFormMsg(null)
+
+    const errors = validateForm()
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors)
+      const count = Object.keys(errors).length
+      setFormMsg({ type: 'error', text: `Ada ${count} kolom yang perlu diperbaiki. Lihat keterangan merah di bawah kolom terkait.` })
+      return
+    }
+    setFormErrors({})
+
     try {
       const payload = {
         ...form,
+        personName: form.personName.trim(),
         amount: Number(form.amount),
         date: new Date(form.date).toISOString(),
-        paid: form.status === 'done' ? Number(form.amount) : 0,
-        forcedDoneSnapshot: form.status === 'done' ? { paid: 0, payments: [] } : undefined,
       }
       if (editingId) {
         await debtService.update(editingId, payload)
@@ -93,10 +193,14 @@ function HutangPiutang() {
       } else {
         await debtService.create(payload)
       }
-      setForm({ type: 'hutang', personName: '', amount: '', date: new Date().toISOString().split('T')[0], reason: '', status: 'onprogress', photoUrl: '' })
+      setForm({ type: 'hutang', personName: '', amount: '', date: new Date().toISOString().split('T')[0], reason: '', status: 'onprogress' })
+      setFormMsg({ type: 'success', text: editingId ? 'Perubahan berhasil disimpan.' : 'Data berhasil ditambahkan.' })
+      setTimeout(() => setFormMsg(null), 3000)
       fetchDebts()
     } catch (err) {
-      alert('Gagal menyimpan data')
+      // Tampilkan pesan spesifik dari backend jika ada
+      const backendMsg = err?.response?.data?.message || err?.response?.data?.error
+      setFormMsg({ type: 'error', text: backendMsg ? `Gagal menyimpan: ${backendMsg}` : 'Gagal menyimpan data. Periksa koneksi ke server dan coba lagi.' })
     }
   }
 
@@ -132,7 +236,7 @@ function HutangPiutang() {
   }
 
   const toggleSelectAll = (e) => {
-    if (e.target.checked) setSelectedIds(new Set(debts.map(d => d._id)))
+    if (e.target.checked) setSelectedIds(new Set(filteredAndSortedDebts.map(d => d._id)))
     else setSelectedIds(new Set())
   }
 
@@ -154,25 +258,56 @@ function HutangPiutang() {
 
   const openPayment = (d) => {
     setPaymentForId(d._id)
+    setPaymentEdit(null)
+    setPaymentForm({ amount: '', date: new Date().toISOString().split('T')[0], note: '' })
+  }
+
+  const openEditPayment = (debtId, index, payment) => {
+    setPaymentForId(null)
+    setPaymentEdit({ debtId, index, amount: payment.amount, date: new Date(payment.date).toISOString().split('T')[0], note: payment.note || '' })
+    setPaymentForm({ amount: payment.amount, date: new Date(payment.date).toISOString().split('T')[0], note: payment.note || '' })
+  }
+
+  const closePaymentModal = () => {
+    setPaymentForId(null)
+    setPaymentEdit(null)
     setPaymentForm({ amount: '', date: new Date().toISOString().split('T')[0], note: '' })
   }
 
   const submitPayment = async (e) => {
     e.preventDefault()
-    if (!paymentForId) return
     const amt = Number(paymentForm.amount)
     if (!amt || amt <= 0) { alert('Jumlah pembayaran harus > 0'); return }
+
     try {
-      await debtService.addPayment(paymentForId, { amount: amt, date: paymentForm.date, note: paymentForm.note })
-      setPaymentForId(null)
-      setPaymentForm({ amount: '', date: new Date().toISOString().split('T')[0], note: '' })
+      if (paymentEdit) {
+        await debtService.updatePayment(paymentEdit.debtId, paymentEdit.index, { amount: amt, date: paymentForm.date, note: paymentForm.note })
+      } else if (paymentForId) {
+        await debtService.addPayment(paymentForId, { amount: amt, date: paymentForm.date, note: paymentForm.note })
+      } else {
+        return
+      }
+
+      closePaymentModal()
       fetchDebts()
     } catch {
-      alert('Gagal mencatat pembayaran')
+      alert('Gagal menyimpan pembayaran')
+    }
+  }
+
+  const deletePayment = async (debtId, index) => {
+    if (!window.confirm('Hapus pembayaran ini?')) return
+    try {
+      await debtService.deletePayment(debtId, index)
+      fetchDebts()
+    } catch {
+      alert('Gagal menghapus pembayaran')
     }
   }
 
   const startEdit = (d) => {
+    setFormErrors({})
+    setFormMsg(null)
     setEditingId(d._id)
     setForm({
       type: d.type,
@@ -181,172 +316,17 @@ function HutangPiutang() {
       date: new Date(d.date).toISOString().split('T')[0],
       reason: d.reason || '',
       status: d.status,
-      photoUrl: d.photoUrl || '',
     })
     window.scrollTo({ top: 0, behavior: 'smooth' })
-    const mainContainer = document.querySelector('main')
-    if (mainContainer) {
-      mainContainer.scrollTo({ top: 0, behavior: 'smooth' })
-    }
   }
 
   const formatCurrency = (n) => `Rp ${Number(n).toLocaleString('id-ID')}`
-  
-  const handleDownloadTemplate = () => {
-    const wb = XLSX.utils.book_new()
-    
-    // Sheet 1: Template kosong
-    const templateData = [
-      { 'Tanggal': '', 'Tipe': '', 'Nama Orang': '', 'Jumlah (Rp)': '', 'Alasan': '', 'Foto': '', 'Status': '' }
-    ]
-    const wsTemplate = XLSX.utils.json_to_sheet(templateData)
-    wsTemplate['!cols'] = [{ wch: 15 }, { wch: 10 }, { wch: 20 }, { wch: 15 }, { wch: 30 }, { wch: 50 }, { wch: 12 }]
-    
-    // Sheet 2: Contoh pengisian
-    const exampleData = [
-      { 'Tanggal': '31/12/2025', 'Tipe': 'hutang', 'Nama Orang': 'John Doe', 'Jumlah (Rp)': '5000000', 'Alasan': 'Pinjaman modal usaha', 'Foto': 'https://example.com/foto1.jpg', 'Status': 'onprogress' },
-      { 'Tanggal': '30/12/2025', 'Tipe': 'piutang', 'Nama Orang': 'Jane Smith', 'Jumlah (Rp)': '3000000', 'Alasan': 'Pinjaman ke teman', 'Foto': '', 'Status': 'onprogress' },
-      { 'Tanggal': '29/12/2025', 'Tipe': 'hutang', 'Nama Orang': 'Bank ABC', 'Jumlah (Rp)': '10000000', 'Alasan': 'KPR', 'Foto': '', 'Status': 'done' },
-    ]
-    const wsExample = XLSX.utils.json_to_sheet(exampleData)
-    wsExample['!cols'] = [{ wch: 15 }, { wch: 10 }, { wch: 20 }, { wch: 15 }, { wch: 30 }, { wch: 50 }, { wch: 12 }]
-    
-    // Sheet 3: Panduan
-    const guideData = [
-      { 'Kolom': 'Tanggal', 'Format': 'DD/MM/YYYY atau YYYY-MM-DD', 'Contoh': '31/12/2025', 'Wajib': 'Ya' },
-      { 'Kolom': 'Tipe', 'Format': 'hutang / piutang', 'Contoh': 'hutang', 'Wajib': 'Ya' },
-      { 'Kolom': 'Nama Orang', 'Format': 'Teks bebas', 'Contoh': 'John Doe', 'Wajib': 'Ya' },
-      { 'Kolom': 'Jumlah (Rp)', 'Format': 'Angka tanpa pemisah ribuan', 'Contoh': '5000000', 'Wajib': 'Ya' },
-      { 'Kolom': 'Alasan', 'Format': 'Teks bebas', 'Contoh': 'Pinjaman modal usaha', 'Wajib': 'Tidak' },
-      { 'Kolom': 'Foto', 'Format': 'URL atau base64 atau kosongkan', 'Contoh': 'https://example.com/foto.jpg', 'Wajib': 'Tidak' },
-      { 'Kolom': 'Status', 'Format': 'onprogress / done', 'Contoh': 'onprogress', 'Wajib': 'Ya' },
-    ]
-    const wsGuide = XLSX.utils.json_to_sheet(guideData)
-    wsGuide['!cols'] = [{ wch: 15 }, { wch: 30 }, { wch: 30 }, { wch: 15 }]
-    
-    XLSX.utils.book_append_sheet(wb, wsTemplate, 'Template')
-    XLSX.utils.book_append_sheet(wb, wsExample, 'Contoh')
-    XLSX.utils.book_append_sheet(wb, wsGuide, 'Panduan')
-    XLSX.writeFile(wb, 'Template-Import-HutangPiutang.xlsx')
-  }
-
-  const handleExportExcel = () => {
-    if (debts.length === 0) { 
-      alert('Tidak ada data untuk diekspor')
-      return 
-    }
-    const data = debts.map(d => ({
-      'Tanggal': new Date(d.date).toLocaleDateString('id-ID'),
-      'Tipe': d.type === 'hutang' ? 'HUTANG' : 'PIUTANG',
-      'Nama Orang': d.personName,
-      'Jumlah (Rp)': d.amount,
-      'Terbayar (Rp)': d.paid || 0,
-      'Sisa (Rp)': Math.max(0, d.amount - (d.paid || 0)),
-      'Alasan': d.reason || '-',
-      'Ada Foto': d.photoUrl ? 'Ya' : 'Tidak',
-      'Status': d.status === 'done' ? 'DONE' : 'ONPROGRESS',
-    }))
-    
-    const wb = XLSX.utils.book_new()
-    const ws = XLSX.utils.json_to_sheet(data)
-    ws['!cols'] = [{ wch: 15 }, { wch: 10 }, { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 30 }, { wch: 12 }, { wch: 12 }]
-    
-    const wsSummary = XLSX.utils.json_to_sheet([
-      {},
-      { 'Tanggal': 'RINGKASAN' },
-      { 'Tanggal': 'Total Data', 'Tipe': debts.length },
-      { 'Tanggal': 'Hutang Belum Terbayar', 'Jumlah (Rp)': totals.hutangUnpaid },
-      { 'Tanggal': 'Hutang Sudah Terbayar', 'Jumlah (Rp)': totals.hutangPaid },
-      { 'Tanggal': 'Piutang Belum Terbayar', 'Jumlah (Rp)': totals.piutangUnpaid },
-      { 'Tanggal': 'Piutang Sudah Terbayar', 'Jumlah (Rp)': totals.piutangPaid },
-    ])
-    wsSummary['!cols'] = [{ wch: 25 }, { wch: 10 }, { wch: 20 }, { wch: 15 }]
-    
-    XLSX.utils.book_append_sheet(wb, ws, 'Hutang Piutang')
-    XLSX.utils.book_append_sheet(wb, wsSummary, 'Ringkasan')
-    XLSX.writeFile(wb, `Laporan-HutangPiutang-${new Date().toISOString().split('T')[0]}.xlsx`)
-  }
-
-  const handleFileUpload = async (file) => {
-    if (!file) return
-    try {
-      const data = await file.arrayBuffer()
-      const wb = XLSX.read(data, { type: 'array' })
-      const firstSheet = wb.Sheets[wb.SheetNames[0]]
-      const rows = XLSX.utils.sheet_to_json(firstSheet, { defval: '' })
-      
-      if (!rows || rows.length === 0) { 
-        alert('File kosong atau format tidak dikenali')
-        return 
-      }
-      
-      const debtsToImport = rows.map(r => {
-        const tanggal = r.Tanggal || r.Date || r.tanggal
-        const tipe = r.Tipe || r.tipe || r.type
-        const nama = r['Nama Orang'] || r.nama || r.personName
-        const jumlahRaw = r['Jumlah (Rp)'] || r.Jumlah || r.amount
-        const alasan = r.Alasan || r.alasan || r.reason || ''
-        const foto = r.Foto || r.foto || r.photoUrl || ''
-        const status = r.Status || r.status || 'onprogress'
-        
-        const amount = Number.parseFloat(String(jumlahRaw).replace(/[^0-9.-]/g, '')) || 0
-        
-        let date = null
-        if (typeof tanggal === 'number') {
-          const d = XLSX.SSF.parse_date_code(tanggal)
-          if (d) date = new Date(d.y, d.m - 1, d.d).toISOString()
-        } else if (tanggal) {
-          const parsed = new Date(tanggal)
-          if (!Number.isNaN(parsed.getTime())) date = parsed.toISOString()
-        }
-        
-        return {
-          type: String(tipe || '').toLowerCase() === 'hutang' ? 'hutang' : 'piutang',
-          personName: String(nama || '').trim(),
-          amount,
-          date: date || new Date().toISOString(),
-          reason: String(alasan || '').trim(),
-          photoUrl: String(foto || '').trim(),
-          status: String(status || '').toLowerCase() === 'done' ? 'done' : 'onprogress',
-          paid: 0,
-        }
-      })
-      
-      if (!window.confirm(`Import ${debtsToImport.length} data hutang/piutang? Lanjutkan?`)) { 
-        return 
-      }
-      
-      for (const debt of debtsToImport) {
-        await debtService.create(debt)
-      }
-      
-      alert(`Import selesai: ${debtsToImport.length} data berhasil ditambahkan`)
-      fetchDebts()
-    } catch (err) {
-      console.error('Import file gagal:', err)
-      alert('Gagal mengimport file. Periksa format dan coba lagi.')
-    }
-  }
-
-  const handleFileChange = (e) => {
-    const file = e.target?.files?.[0]
-    if (file) handleFileUpload(file)
-    if (e.target) e.target.value = null
-  }
-
   const totals = (() => {
-    const hutangDebts = debts.filter(d => d.type === 'hutang')
-    const piutangDebts = debts.filter(d => d.type === 'piutang')
-    
-    // Hutang: unpaid (remaining) dan paid
-    const hutangUnpaid = hutangDebts.reduce((s, d) => s + Math.max(0, Number(d.amount) - Number(d.paid || 0)), 0)
-    const hutangPaid = hutangDebts.reduce((s, d) => s + (Number(d.paid) || 0), 0)
-    
-    // Piutang: unpaid (remaining) dan paid
-    const piutangUnpaid = piutangDebts.reduce((s, d) => s + Math.max(0, Number(d.amount) - Number(d.paid || 0)), 0)
-    const piutangPaid = piutangDebts.reduce((s, d) => s + (Number(d.paid) || 0), 0)
-    
-    return { hutangUnpaid, hutangPaid, piutangUnpaid, piutangPaid }
+    const totalHutang = debts.filter(d => d.type === 'hutang').reduce((s, d) => s + (Number(d.amount) || 0), 0)
+    const totalPiutang = debts.filter(d => d.type === 'piutang').reduce((s, d) => s + (Number(d.amount) || 0), 0)
+    const hutangRemaining = debts.filter(d => d.type === 'hutang').reduce((s, d) => s + Math.max(0, Number(d.amount) - Number(d.paid || 0)), 0)
+    const piutangRemaining = debts.filter(d => d.type === 'piutang').reduce((s, d) => s + Math.max(0, Number(d.amount) - Number(d.paid || 0)), 0)
+    return { totalHutang, totalPiutang, hutangRemaining, piutangRemaining }
   })()
 
   return (
@@ -357,9 +337,17 @@ function HutangPiutang() {
       </div>
 
       {/* Form */}
-      <div className="card" id="hutang-piutang-form">
+      <div className="card">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">{editingId ? 'Edit Data' : 'Tambah Data'}</h3>
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        {formMsg && (
+          <div className={`mb-4 p-3 rounded-lg border flex items-start gap-2 ${formMsg.type === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
+            <span className="font-bold">{formMsg.type === 'success' ? '✓' : '✗'}</span>
+            <span className="text-sm">{formMsg.text}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4" noValidate>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Tipe</label>
             <select name="type" value={form.type} onChange={handleChange} className="input-field">
@@ -368,36 +356,24 @@ function HutangPiutang() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Nama Orang</label>
-            <input name="personName" value={form.personName} onChange={handleChange} className="input-field" placeholder="Contoh: Andi" />
+            <label className="block text-sm font-medium text-gray-700 mb-2">Nama Orang <span className="text-red-500">*</span></label>
+            <input name="personName" value={form.personName} onChange={handleChange} className={`input-field ${formErrors.personName ? 'border-red-500 focus:ring-red-500' : ''}`} placeholder="Contoh: Andi" />
+            {formErrors.personName && <p className="mt-1 text-xs text-red-600">{formErrors.personName}</p>}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Jumlah (Rp)</label>
-            <input type="number" name="amount" value={form.amount} onChange={handleChange} className="input-field" />
+            <label className="block text-sm font-medium text-gray-700 mb-2">Jumlah (Rp) <span className="text-red-500">*</span></label>
+            <input type="number" name="amount" value={form.amount} onChange={handleChange} className={`input-field ${formErrors.amount ? 'border-red-500 focus:ring-red-500' : ''}`} placeholder="Contoh: 500000" />
+            {formErrors.amount && <p className="mt-1 text-xs text-red-600">{formErrors.amount}</p>}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Tanggal</label>
-            <input type="date" name="date" value={form.date} onChange={handleChange} className="input-field" />
+            <label className="block text-sm font-medium text-gray-700 mb-2">Tanggal <span className="text-red-500">*</span></label>
+            <input type="date" name="date" value={form.date} onChange={handleChange} className={`input-field ${formErrors.date ? 'border-red-500 focus:ring-red-500' : ''}`} />
+            {formErrors.date && <p className="mt-1 text-xs text-red-600">{formErrors.date}</p>}
           </div>
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-2">Alasan/Keterangan</label>
-            <textarea name="reason" value={form.reason} onChange={handleChange} className="input-field" rows={3} placeholder="Contoh: Pinjam untuk biaya ..."></textarea>
-          </div>
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Upload Foto Bukti Transaksi</label>
-            <input ref={fileInputRef} type="file" name="photo" accept="image/*" onChange={handleChange} className="input-field" />
-            {form.photoUrl && (
-              <div className="mt-3">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm text-gray-600">Preview:</p>
-                  <button type="button" onClick={clearPhoto} className="text-sm text-red-600 hover:text-red-800 font-medium flex items-center gap-1">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                    Hapus Foto
-                  </button>
-                </div>
-                <img src={form.photoUrl} alt="Preview" className="w-32 h-32 object-cover rounded border border-gray-200" />
-              </div>
-            )}
+            <textarea name="reason" value={form.reason} onChange={handleChange} className={`input-field ${formErrors.reason ? 'border-red-500 focus:ring-red-500' : ''}`} rows={3} placeholder="Contoh: Pinjam untuk biaya ..."></textarea>
+            {formErrors.reason && <p className="mt-1 text-xs text-red-600">{formErrors.reason}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
@@ -406,14 +382,8 @@ function HutangPiutang() {
               <option value="done">DONE</option>
             </select>
           </div>
-          <div className="flex items-end gap-2">
+          <div className="flex items-end">
             <button type="submit" className="btn btn-primary">{editingId ? 'Simpan Perubahan' : 'Tambah'}</button>
-            {editingId && (
-              <button type="button" className="btn btn-secondary" onClick={() => {
-                setEditingId(null)
-                setForm({ type: 'hutang', personName: '', amount: '', date: new Date().toISOString().split('T')[0], reason: '', status: 'onprogress' })
-              }}>Batal</button>
-            )}
           </div>
         </form>
       </div>
@@ -421,31 +391,60 @@ function HutangPiutang() {
       {/* Summary Totals */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="card">
-          <p className="text-sm text-gray-700">Hutang Belum Terbayar</p>
-          <p className="text-2xl font-bold text-red-600">{formatCurrency(totals.hutangUnpaid)}</p>
+          <p className="text-sm text-gray-700">Total Hutang</p>
+          <p className="text-2xl font-bold text-red-600">{formatCurrency(totals.totalHutang)}</p>
         </div>
         <div className="card">
-          <p className="text-sm text-gray-700">Hutang Sudah Terbayar</p>
-          <p className="text-2xl font-bold text-green-600">{formatCurrency(totals.hutangPaid)}</p>
+          <p className="text-sm text-gray-700">Total Piutang</p>
+          <p className="text-2xl font-bold text-green-600">{formatCurrency(totals.totalPiutang)}</p>
         </div>
         <div className="card">
-          <p className="text-sm text-gray-700">Piutang Belum Terbayar</p>
-          <p className="text-2xl font-bold text-red-600">{formatCurrency(totals.piutangUnpaid)}</p>
+          <p className="text-sm text-gray-700">Sisa Hutang</p>
+          <p className="text-2xl font-bold text-yellow-700">{formatCurrency(totals.hutangRemaining)}</p>
         </div>
         <div className="card">
-          <p className="text-sm text-gray-700">Piutang Sudah Terbayar</p>
-          <p className="text-2xl font-bold text-green-600">{formatCurrency(totals.piutangPaid)}</p>
+          <p className="text-sm text-gray-700">Sisa Piutang</p>
+          <p className="text-2xl font-bold text-blue-700">{formatCurrency(totals.piutangRemaining)}</p>
         </div>
       </div>
 
-      {/* Excel Import/Export Buttons */}
-      <div className="mb-6 flex justify-end gap-2">
-        <button onClick={handleDownloadTemplate} className="btn btn-outline flex items-center gap-2"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>Template Excel</button>
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input type="file" accept=".xlsx,.xls" onChange={handleFileChange} className="hidden" />
-          <span className="btn btn-secondary flex items-center gap-2"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>Import Excel</span>
-        </label>
-        <button onClick={handleExportExcel} className="btn btn-primary flex items-center gap-2"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>Export Excel</button>
+      {/* Filter */}
+      <div className="card mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Cari (nama / alasan)</label>
+            <input
+              type="text"
+              value={filters.query}
+              onChange={e => handleFilterChange('query', e.target.value)}
+              className="input-field"
+              placeholder="Cari..."
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tipe</label>
+            <select value={filters.type} onChange={e => handleFilterChange('type', e.target.value)} className="input-field">
+              <option value="">Semua</option>
+              <option value="hutang">HUTANG</option>
+              <option value="piutang">PIUTANG</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <select value={filters.status} onChange={e => handleFilterChange('status', e.target.value)} className="input-field">
+              <option value="">Semua</option>
+              <option value="onprogress">ONPROGRESS</option>
+              <option value="done">DONE</option>
+            </select>
+          </div>
+          {(filters.query || filters.type || filters.status) && (
+            <div className="flex items-end">
+              <button type="button" className="btn btn-secondary w-full" onClick={resetFilters}>
+                Reset Filter
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* List */}
@@ -454,56 +453,163 @@ function HutangPiutang() {
           <div className="text-center py-8 text-gray-600">Loading...</div>
         ) : error ? (
           <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">{error}</div>
-        ) : debts.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">Belum ada data</div>
+        ) : filteredAndSortedDebts.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            {filters.query || filters.type || filters.status ? 'Tidak ada data yang sesuai filter' : 'Belum ada data'}
+          </div>
         ) : (
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-4 py-3 text-left">
-                  <input type="checkbox" className="w-4 h-4" onChange={toggleSelectAll} checked={debts.length>0 && selectedIds.size===debts.length} />
+                  <input type="checkbox" className="w-4 h-4" onChange={toggleSelectAll} checked={filteredAndSortedDebts.length>0 && selectedIds.size===filteredAndSortedDebts.length} />
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Tipe</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Nama</th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Jumlah</th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Terbayar</th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Sisa</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Tanggal</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Alasan</th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Status</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer select-none" onClick={() => toggleSort('type')}>
+                  Tipe {getSortIcon('type')}
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer select-none" onClick={() => toggleSort('name')}>
+                  Nama {getSortIcon('name')}
+                </th>
+                <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700 cursor-pointer select-none" onClick={() => toggleSort('amount')}>
+                  Jumlah {getSortIcon('amount')}
+                </th>
+                <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700 cursor-pointer select-none" onClick={() => toggleSort('paid')}>
+                  Terbayar {getSortIcon('paid')}
+                </th>
+                <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700 cursor-pointer select-none" onClick={() => toggleSort('remaining')}>
+                  Sisa {getSortIcon('remaining')}
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer select-none" onClick={() => toggleSort('date')}>
+                  Tanggal {getSortIcon('date')}
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Keterangan</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer select-none" onClick={() => toggleSort('status')}>
+                  Status {getSortIcon('status')}
+                </th>
                 <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Aksi</th>
               </tr>
             </thead>
             <tbody>
-              {debts.map((d) => (
-                <tr key={d._id} className="border-b border-gray-200 hover:bg-gray-50">
-                  <td className="px-4 py-3 text-left">
-                    <input type="checkbox" className="w-4 h-4" checked={selectedIds.has(d._id)} onChange={() => toggleSelect(d._id)} />
-                  </td>
-                  <td className="px-4 py-3 text-sm font-medium">{d.type === 'hutang' ? 'HUTANG' : 'PIUTANG'}</td>
-                  <td className="px-4 py-3 text-sm">{d.personName}</td>
-                  <td className="px-4 py-3 text-sm text-right text-green-700 font-semibold">{formatCurrency(d.amount)}</td>
-                  <td className="px-4 py-3 text-sm text-right">{formatCurrency(d.paid || 0)}</td>
-                  <td className="px-4 py-3 text-sm text-right">{formatCurrency(Math.max(0, (Number(d.amount)||0) - (Number(d.paid)||0)))}</td>
-                  <td className="px-4 py-3 text-sm">{new Date(d.date).toLocaleDateString('id-ID')}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600 max-w-xs truncate">{d.reason || '-'}</td>
-                  <td className="px-4 py-3 text-sm text-center">
-                    <button onClick={() => toggleStatus(d)} className={`px-3 py-1 rounded text-xs font-semibold ${d.status === 'done' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                      {d.status === 'done' ? 'DONE' : 'ONPROGRESS'}
-                    </button>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-center space-x-2">
-                    {d.photoUrl && (
-                      <button onClick={() => setViewPhotoUrl(d.photoUrl)} className="text-green-600 hover:text-green-800 font-medium">Foto</button>
-                    )}
-                    <button onClick={() => startEdit(d)} className="text-blue-600 hover:text-blue-800 font-medium">Edit</button>
-                    <button onClick={() => handleDelete(d._id)} className="text-red-500 hover:text-red-700 font-medium">Hapus</button>
-                    <button onClick={() => openPayment(d)} className="text-purple-600 hover:text-purple-800 font-medium">Bayar/Cicil</button>
-                  </td>
-                </tr>
-              ))}
+              {filteredAndSortedDebts.map((d) => {
+                const isExpanded = expandedPaymentId === d._id
+                return (
+                  <>
+                  <tr key={d._id} className="border-b border-gray-200 hover:bg-gray-50">
+                    <td className="px-4 py-3 text-left">
+                      <input type="checkbox" className="w-4 h-4" checked={selectedIds.has(d._id)} onChange={() => toggleSelect(d._id)} />
+                    </td>
+                    <td className="px-4 py-3 text-sm font-medium">{d.type === 'hutang' ? 'HUTANG' : 'PIUTANG'}</td>
+                    <td className="px-4 py-3 text-sm">{d.personName}</td>
+                    <td className="px-4 py-3 text-sm text-right text-green-700 font-semibold">{formatCurrency(d.amount)}</td>
+                    <td className="px-4 py-3 text-sm text-right">{formatCurrency(d.paid || 0)}</td>
+                    <td className="px-4 py-3 text-sm text-right">{formatCurrency(Math.max(0, (Number(d.amount)||0) - (Number(d.paid)||0)))}</td>
+                    <td className="px-4 py-3 text-sm">{new Date(d.date).toLocaleDateString('id-ID')}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600 max-w-xs">
+                      {d.reason ? (
+                        <button
+                          type="button"
+                          onClick={() => toggleReason(d._id)}
+                          title={expandedReason.has(d._id) ? 'Klik untuk ringkas' : d.reason}
+                          className={`text-left w-full hover:text-blue-600 ${expandedReason.has(d._id) ? 'whitespace-pre-wrap break-words' : 'truncate'}`}
+                        >
+                          {d.reason}
+                        </button>
+                      ) : '-'}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-center">
+                      <button onClick={() => toggleStatus(d)} className={`px-3 py-1 rounded text-xs font-semibold ${d.status === 'done' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                        {d.status === 'done' ? 'DONE' : 'ONPROGRESS'}
+                      </button>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-center space-x-2">
+                      <button onClick={() => setExpandedPaymentId(isExpanded ? null : d._id)} className="text-indigo-600 hover:text-indigo-800 font-medium text-xs" title="Lihat riwayat pembayaran">📋</button>
+                      <button onClick={() => startEdit(d)} className="text-blue-600 hover:text-blue-800 font-medium text-xs">Edit</button>
+                      <button onClick={() => handleDelete(d._id)} className="text-red-500 hover:text-red-700 font-medium text-xs">Hapus</button>
+                      <button onClick={() => openPayment(d)} className="text-purple-600 hover:text-purple-800 font-medium text-xs">Bayar</button>
+                    </td>
+                  </tr>
+                  {isExpanded && (
+                    <tr className="border-b border-gray-200 bg-blue-50">
+                      <td colSpan="10" className="px-6 py-4">
+                        {d.payments && d.payments.length > 0 ? (
+                          <div className="space-y-3">
+                            <h4 className="font-semibold text-gray-900 text-sm">Riwayat Pembayaran ({d.payments.length})</h4>
+                            <div className="space-y-2">
+                              {d.payments.map((pmt, idx) => (
+                                <div key={idx} className="bg-white border border-gray-200 rounded p-3">
+                                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                                    <div>
+                                      <p className="text-gray-600 text-xs font-medium">Tanggal</p>
+                                      <p className="font-medium text-gray-900">{new Date(pmt.date).toLocaleDateString('id-ID')}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-gray-600 text-xs font-medium">Jumlah Bayar</p>
+                                      <p className="font-medium text-green-700">{formatCurrency(pmt.amount)}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-gray-600 text-xs font-medium">Catatan</p>
+                                      <p className="font-medium text-gray-900">{pmt.note || '-'}</p>
+                                    </div>
+                                    <div className="flex flex-col gap-2">
+                                      <button type="button" className="text-indigo-600 hover:text-indigo-800 text-xs font-semibold" onClick={() => openEditPayment(d._id, idx, pmt)}>
+                                        Edit
+                                      </button>
+                                      <button type="button" className="text-red-600 hover:text-red-800 text-xs font-semibold" onClick={() => deletePayment(d._id, idx)}>
+                                        Hapus
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-gray-500 text-sm">Belum ada riwayat pembayaran</p>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                  </>
+                )
+              })}
             </tbody>
           </table>
+        )}
+
+        {(paymentForId || paymentEdit) && (
+          <div className="fixed inset-0 z-50 flex items-start justify-center pt-20">
+            <div className="fixed inset-0 bg-black opacity-40" style={{zIndex:50}} onClick={closePaymentModal}></div>
+            <div className="relative bg-white rounded-lg shadow-lg p-6 z-60 w-full max-w-md mx-4" style={{zIndex:60}} onClick={e => e.stopPropagation()}>
+              <h3 className="text-lg font-semibold mb-4">
+                {paymentEdit ? 'Edit Pembayaran' : 'Catat Pembayaran'}
+              </h3>
+              <form onSubmit={submitPayment} className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Jumlah</label>
+                  <input type="number" value={paymentForm.amount} onChange={e => setPaymentForm(prev => ({...prev, amount: e.target.value}))} className="input-field" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal</label>
+                  <input type="date" value={paymentForm.date} onChange={e => setPaymentForm(prev => ({...prev, date: e.target.value}))} className="input-field" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Catatan (opsional)</label>
+                  <input type="text" value={paymentForm.note} onChange={e => setPaymentForm(prev => ({...prev, note: e.target.value}))} className="input-field" />
+                </div>
+                <div className="flex justify-between gap-2">
+                  <button type="button" className="btn btn-secondary" onClick={closePaymentModal}>Batal</button>
+                  <div className="flex gap-2">
+                    {paymentEdit && (
+                      <button type="button" className="btn btn-danger" onClick={() => deletePayment(paymentEdit.debtId, paymentEdit.index)}>
+                        Hapus
+                      </button>
+                    )}
+                    <button type="submit" className="btn btn-primary">Simpan</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
         )}
 
         {/* Bulk actions */}
@@ -513,49 +619,6 @@ function HutangPiutang() {
           </div>
         )}
       </div>
-
-      {paymentForId && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-20">
-          <div className="fixed inset-0 bg-black opacity-40" style={{zIndex:50}} onClick={() => setPaymentForId(null)}></div>
-          <div className="relative bg-white rounded-lg shadow-lg p-6 z-60 w-full max-w-md mx-4" style={{zIndex:60}} onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold mb-4">Catat Pembayaran</h3>
-            <form onSubmit={submitPayment} className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Jumlah</label>
-                <input type="number" value={paymentForm.amount} onChange={e => setPaymentForm(prev => ({...prev, amount: e.target.value}))} className="input-field" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal</label>
-                <input type="date" value={paymentForm.date} onChange={e => setPaymentForm(prev => ({...prev, date: e.target.value}))} className="input-field" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Catatan (opsional)</label>
-                <input type="text" value={paymentForm.note} onChange={e => setPaymentForm(prev => ({...prev, note: e.target.value}))} className="input-field" />
-              </div>
-              <div className="flex justify-end gap-2">
-                <button type="button" className="btn btn-secondary" onClick={() => setPaymentForId(null)}>Batal</button>
-                <button type="submit" className="btn btn-primary">Simpan</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Photo View Modal */}
-      {viewPhotoUrl && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black opacity-70" style={{zIndex:50}} onClick={() => setViewPhotoUrl(null)}></div>
-          <div className="relative bg-white rounded-lg shadow-lg p-4 z-60 max-w-4xl max-h-[90vh] overflow-auto" style={{zIndex:60}} onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-lg font-semibold">Foto Bukti Transaksi</h3>
-              <button onClick={() => setViewPhotoUrl(null)} className="text-gray-500 hover:text-gray-700">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-            <img src={viewPhotoUrl} alt="Bukti Transaksi" className="w-full h-auto rounded border border-gray-200" />
-          </div>
-        </div>
-      )}
     </div>
   )
 }

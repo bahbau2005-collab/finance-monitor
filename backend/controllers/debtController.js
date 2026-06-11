@@ -3,13 +3,11 @@ const Debt = require('../models/Debt');
 // Create
 exports.createDebt = async (req, res) => {
   try {
-    const { type, personName, amount, date, reason, status, paid, photoUrl } = req.body;
+    const { type, personName, amount, date, reason, status } = req.body;
     if (!type || !personName || amount == null || !date) {
       return res.status(400).json({ message: 'Field wajib: type, personName, amount, date' });
     }
-    // Jika status done, otomatis set paid = amount
-    const paidAmount = status === 'done' ? Number(amount) : (paid ? Number(paid) : 0);
-    const debt = await Debt.create({ type, personName, amount, date, reason, status, paid: paidAmount, photoUrl: photoUrl || '' });
+    const debt = await Debt.create({ type, personName, amount, date, reason, status });
     return res.status(201).json({ data: debt });
   } catch (err) {
     return res.status(500).json({ message: 'Gagal membuat data', error: err.message });
@@ -50,10 +48,6 @@ exports.getDebtById = async (req, res) => {
 exports.updateDebt = async (req, res) => {
   try {
     const updates = req.body;
-    // Jika status diubah ke done, otomatis set paid = amount
-    if (updates.status === 'done' && updates.amount != null) {
-      updates.paid = Number(updates.amount);
-    }
     const debt = await Debt.findByIdAndUpdate(req.params.id, updates, { new: true });
     if (!debt) return res.status(404).json({ message: 'Data tidak ditemukan' });
     return res.json({ data: debt });
@@ -105,10 +99,6 @@ exports.updateStatus = async (req, res) => {
         debt.paid = Number(debt.forcedDoneSnapshot.paid || 0);
         debt.payments = (debt.forcedDoneSnapshot.payments || []).map(p => ({ amount: p.amount, date: p.date, note: p.note }));
         debt.forcedDoneSnapshot = { paid: null, payments: [] };
-      } else {
-        // Jika tidak ada snapshot (misalnya dibuat langsung dengan status done), reset paid ke 0
-        debt.paid = 0;
-        debt.payments = [];
       }
       debt.status = 'onprogress';
       await debt.save();
@@ -132,20 +122,65 @@ exports.addPayment = async (req, res) => {
     const debt = await Debt.findById(req.params.id);
     if (!debt) return res.status(404).json({ message: 'Data tidak ditemukan' });
 
-    // push payment and increment paid
     debt.payments.push({ amount: Number(amount), date: new Date(date), note: note || '' });
-    debt.paid = Number(debt.paid || 0) + Number(amount);
 
-    // auto status update: done if fully paid/collected
-    if (debt.paid >= debt.amount) {
-      debt.status = 'done';
-    } else {
-      debt.status = 'onprogress';
-    }
+    // Recalculate total paid and status
+    debt.paid = (debt.payments || []).reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+    debt.status = debt.paid >= debt.amount ? 'done' : 'onprogress';
 
     await debt.save();
     return res.json({ data: debt });
   } catch (err) {
     return res.status(500).json({ message: 'Gagal menambah pembayaran', error: err.message });
+  }
+};
+
+// Update a specific payment entry (by index)
+exports.updatePayment = async (req, res) => {
+  try {
+    const { amount, date, note } = req.body;
+    const index = Number(req.params.index);
+    if (amount == null || Number(amount) <= 0 || !date) {
+      return res.status(400).json({ message: 'Field wajib: amount (>0) dan date' });
+    }
+
+    const debt = await Debt.findById(req.params.id);
+    if (!debt) return res.status(404).json({ message: 'Data tidak ditemukan' });
+    if (!Array.isArray(debt.payments) || index < 0 || index >= debt.payments.length) {
+      return res.status(400).json({ message: 'Pembayaran tidak ditemukan' });
+    }
+
+    debt.payments[index].amount = Number(amount);
+    debt.payments[index].date = new Date(date);
+    debt.payments[index].note = note || '';
+
+    debt.paid = (debt.payments || []).reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+    debt.status = debt.paid >= debt.amount ? 'done' : 'onprogress';
+
+    await debt.save();
+    return res.json({ data: debt });
+  } catch (err) {
+    return res.status(500).json({ message: 'Gagal mengupdate pembayaran', error: err.message });
+  }
+};
+
+// Delete a specific payment entry (by index)
+exports.deletePayment = async (req, res) => {
+  try {
+    const index = Number(req.params.index);
+    const debt = await Debt.findById(req.params.id);
+    if (!debt) return res.status(404).json({ message: 'Data tidak ditemukan' });
+    if (!Array.isArray(debt.payments) || index < 0 || index >= debt.payments.length) {
+      return res.status(400).json({ message: 'Pembayaran tidak ditemukan' });
+    }
+
+    debt.payments.splice(index, 1);
+    debt.paid = (debt.payments || []).reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+    debt.status = debt.paid >= debt.amount ? 'done' : 'onprogress';
+
+    await debt.save();
+    return res.json({ data: debt });
+  } catch (err) {
+    return res.status(500).json({ message: 'Gagal menghapus pembayaran', error: err.message });
   }
 };

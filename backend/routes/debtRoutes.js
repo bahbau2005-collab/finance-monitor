@@ -9,5 +9,7 @@ router.put('/:id', debtController.updateDebt);
 router.delete('/:id', debtController.deleteDebt);
 router.patch('/:id/status', debtController.updateStatus);
 router.post('/:id/payments', debtController.addPayment);
+router.put('/:id/payments/:index', debtController.updatePayment);
+router.delete('/:id/payments/:index', debtController.deletePayment);
 
 module.exports = router;

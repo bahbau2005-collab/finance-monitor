@@ -4,10 +4,12 @@ const cors = require('cors');
 const connectDB = require('./db');
 
 // Import routes
+const authRoutes = require('./routes/authRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
 const savingGoalRoutes = require('./routes/savingGoalRoutes');
 const cashRoutes = require('./routes/cashRoutes');
 const debtRoutes = require('./routes/debtRoutes');
+const { requireAuth } = require('./middleware/auth');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -54,17 +56,22 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Auth routes (login) — TIDAK dikunci, ini pintu masuknya
+app.use('/api/auth', authRoutes);
+
+// Semua route data di bawah ini DIKUNCI: wajib token valid (requireAuth)
+
 // Transaction routes
-app.use('/api/transactions', transactionRoutes);
+app.use('/api/transactions', requireAuth, transactionRoutes);
 
 // Saving Goal routes
-app.use('/api/goals', savingGoalRoutes);
+app.use('/api/goals', requireAuth, savingGoalRoutes);
 
 // Cash account routes
-app.use('/api/cash', cashRoutes);
+app.use('/api/cash', requireAuth, cashRoutes);
 
 // Debt & Receivable routes
-app.use('/api/debts', debtRoutes);
+app.use('/api/debts', requireAuth, debtRoutes);
 
 // ============================================
 // ERROR HANDLING - 404 Not Found

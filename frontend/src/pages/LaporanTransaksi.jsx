@@ -445,15 +445,15 @@ function LaporanTransaksi() {
         <div className="flex gap-2 items-center">
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="file" accept=".xlsx,.xls" onChange={handleFileChange} className="hidden" />
-            <span className="btn btn-secondary flex items-center gap-2"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>Import Excel</span>
+            <span className="btn btn-secondary">📥 Import Excel</span>
           </label>
 
-          <button onClick={downloadTemplate} className="btn btn-outline flex items-center gap-2"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>Download Template</button>
+          <button onClick={downloadTemplate} className="btn btn-outline">📄 Download Template</button>
           <button
             onClick={handleExportExcel}
-            className="btn btn-primary flex items-center gap-2"
+            className="btn btn-primary"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>Export Excel
+            📊 Export Excel
           </button>
         </div>
       </div>
@@ -542,68 +542,67 @@ function LaporanTransaksi() {
             </tbody>
           </table>
         )}
-      </div>
 
-      {/* EDIT MODAL */}
-      {editingId && editData && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-20">
-          {/* Backdrop, only closes modal if click outside modal */}
-          <div className="fixed inset-0 bg-black opacity-40" style={{zIndex: 50}} onClick={closeEdit}></div>
-          {/* Modal, must be above backdrop and not close on click inside */}
-          <div className="relative bg-white rounded-lg shadow-lg p-6 z-60 w-full max-w-xl mx-4" style={{zIndex: 60}} onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold mb-4">Edit Transaksi</h3>
-            <form onSubmit={handleUpdateSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tipe Aset</label>
-                  <select name="assetType" value={editData.assetType} onChange={handleEditChange} className="input-field">
-                    <option value="btc">BITCOIN (BTC)</option>
-                    <option value="crypto">Cryptocurrency (Other)</option>
-                    <option value="saham">Saham</option>
-                    <option value="gold">Emas / Logam Mulia</option>
-                  </select>
+        {/* EDIT MODAL */}
+        {editingId && editData && (
+          <div className="fixed inset-0 z-50 flex items-start justify-center pt-20">
+            {/* Backdrop, only closes modal if click outside modal */}
+            <div className="fixed inset-0 bg-black opacity-40" style={{zIndex: 50}} onClick={closeEdit}></div>
+            {/* Modal, must be above backdrop and not close on click inside */}
+            <div className="relative bg-white rounded-lg shadow-lg p-6 z-60 w-full max-w-xl mx-4" style={{zIndex: 60}} onClick={e => e.stopPropagation()}>
+              <h3 className="text-lg font-semibold mb-4">Edit Transaksi</h3>
+              <form onSubmit={handleUpdateSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Tipe Aset</label>
+                    <select name="assetType" value={editData.assetType} onChange={handleEditChange} className="input-field">
+                      <option value="btc">BITCOIN (BTC)</option>
+                      <option value="crypto">Cryptocurrency (Other)</option>
+                      <option value="saham">Saham</option>
+                      <option value="gold">Emas / Logam Mulia</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nama Aset</label>
+                    <input name="assetName" value={editData.assetName} onChange={handleEditChange} className="input-field" />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nama Aset</label>
-                  <input name="assetName" value={editData.assetName} onChange={handleEditChange} className="input-field" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nominal</label>
+                    <input name="nominal" type="number" value={editData.nominal} onChange={handleEditChange} className="input-field" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal</label>
+                    <input name="transactionDate" type="date" value={editData.transactionDate} onChange={handleEditChange} className="input-field" />
+                  </div>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {['btc','crypto','gold','saham'].includes(editData.assetType) && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Jumlah (koin/gram/lembar)</label>
+                    <input name="quantity" type="number" step="any" value={editData.quantity} onChange={handleEditChange} className="input-field" />
+                    <p className="text-xs text-gray-500 mt-1">Isi jumlah untuk aset berbasis unit (mis. BTC, gram emas, lembar saham).</p>
+                  </div>
+                )}
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nominal</label>
-                  <input name="nominal" type="number" value={editData.nominal} onChange={handleEditChange} className="input-field" />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Deskripsi</label>
+                  <textarea name="description" value={editData.description} onChange={handleEditChange} className="input-field" rows={3}></textarea>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal</label>
-                  <input name="transactionDate" type="date" value={editData.transactionDate} onChange={handleEditChange} className="input-field" />
+
+                <div className="flex justify-end gap-2">
+                  <button type="button" onClick={closeEdit} className="btn btn-secondary">Batal</button>
+                  <button type="submit" className="btn btn-primary">Simpan Perubahan</button>
                 </div>
-              </div>
-
-              {['btc','crypto','gold','saham'].includes(editData.assetType) && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Jumlah (koin/gram/lembar)</label>
-                  <input name="quantity" type="number" step="any" value={editData.quantity} onChange={handleEditChange} className="input-field" />
-                  <p className="text-xs text-gray-500 mt-1">Isi jumlah untuk aset berbasis unit (mis. BTC, gram emas, lembar saham).</p>
-                </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Deskripsi</label>
-                <textarea name="description" value={editData.description} onChange={handleEditChange} className="input-field" rows={3}></textarea>
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <button type="button" onClick={closeEdit} className="btn btn-secondary">Batal</button>
-                <button type="submit" className="btn btn-primary">Simpan Perubahan</button>
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* SUMMARY */}
+        {/* SUMMARY */}
         {transactions.length > 0 && (
           <div className="mt-6 pt-6 border-t border-gray-200">
             <div className="grid grid-cols-3 gap-4 text-center mb-6">

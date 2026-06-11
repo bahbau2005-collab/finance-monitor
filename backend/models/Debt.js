@@ -59,11 +59,6 @@ const debtSchema = new mongoose.Schema({
     maxlength: 500,
     default: '',
   },
-  photoUrl: {
-    type: String,
-    trim: true,
-    default: '',
-  },
   status: {
     type: String,
     enum: ['onprogress', 'done'],

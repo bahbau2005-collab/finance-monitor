@@ -1,14 +1,58 @@
 import { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom'
-import { healthCheck } from './services/api'
+import { healthCheck, authService, getToken, clearToken } from './services/api'
 
 // Pages
 import Dashboard from './pages/Dashboard'
 import Aset from './pages/Aset'
 import Cash from './pages/Cash'
 import HutangPiutang from './pages/HutangPiutang'
+import Login from './pages/Login'
 
-function AppContent() {
+// Elegant line icons (transparent, inherit color via currentColor)
+const iconProps = {
+  className: 'w-6 h-6 flex-shrink-0',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.8,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+  viewBox: '0 0 24 24',
+}
+
+const DashboardIcon = () => (
+  <svg {...iconProps}>
+    <rect x="3" y="3" width="7" height="9" rx="1.5" />
+    <rect x="14" y="3" width="7" height="5" rx="1.5" />
+    <rect x="14" y="12" width="7" height="9" rx="1.5" />
+    <rect x="3" y="16" width="7" height="5" rx="1.5" />
+  </svg>
+)
+
+const AsetIcon = () => (
+  <svg {...iconProps}>
+    <path d="M3 3v18h18" />
+    <path d="M7 14l3.5-4 3 2.5L21 6" />
+    <path d="M21 11V6h-5" />
+  </svg>
+)
+
+const CashIcon = () => (
+  <svg {...iconProps}>
+    <rect x="2.5" y="6" width="19" height="12" rx="2" />
+    <circle cx="12" cy="12" r="2.5" />
+    <path d="M6 9.5v.01M18 14.5v.01" />
+  </svg>
+)
+
+const HutangPiutangIcon = () => (
+  <svg {...iconProps}>
+    <path d="M7 7h12l-3-3" />
+    <path d="M17 17H5l3 3" />
+  </svg>
+)
+
+function AppContent({ onLogout }) {
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
@@ -27,10 +71,21 @@ function AppContent() {
               <h1 className="text-2xl lg:text-3xl font-bold text-white tracking-tight">Finance Monitor</h1>
               <p className="text-blue-100 text-xs lg:text-sm mt-1">Personal Finance Management System</p>
             </div>
+            {/* Tombol Logout */}
+            <button
+              onClick={onLogout}
+              className="ml-2 px-3 py-2 hover:bg-blue-500 rounded-lg transition-colors flex items-center gap-2 text-white"
+              title="Keluar"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12H3m0 0l4-4m-4 4l4 4M21 3v18" />
+              </svg>
+              <span className="hidden sm:inline text-sm font-medium">Keluar</span>
+            </button>
             {/* Hamburger Menu untuk Mobile */}
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="lg:hidden ml-4 p-2 hover:bg-blue-500 rounded-lg transition-colors"
+              className="lg:hidden ml-2 p-2 hover:bg-blue-500 rounded-lg transition-colors"
               aria-label="Toggle menu"
             >
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -64,9 +119,7 @@ function AppContent() {
                   : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
               }`}
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
+              <DashboardIcon />
               <span>Dashboard</span>
             </Link>
 
@@ -79,9 +132,7 @@ function AppContent() {
                   : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
               }`}
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-              </svg>
+              <AsetIcon />
               <span>Aset</span>
             </Link>
 
@@ -94,9 +145,7 @@ function AppContent() {
                   : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
               }`}
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
+              <CashIcon />
               <span>Cash</span>
             </Link>
 
@@ -109,9 +158,7 @@ function AppContent() {
                   : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
               }`}
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-              </svg>
+              <HutangPiutangIcon />
               <span>Hutang & Piutang</span>
             </Link>
           </nav>
@@ -134,7 +181,7 @@ function AppContent() {
       {/* FOOTER */}
       <footer className="bg-white/80 backdrop-blur-md border-t border-blue-100">
         <div className="px-4 lg:px-6 py-6 lg:py-8 text-center text-gray-600 text-xs lg:text-sm">
-          <p>© 2025 Finance Monitor. Personal Financial Management System.</p>
+          <p>© 2025 Finance Monitor. Elegant Financial Management.</p>
         </div>
       </footer>
     </div>
@@ -144,23 +191,45 @@ function AppContent() {
 function App() {
   const [isConnected, setIsConnected] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [isAuthed, setIsAuthed] = useState(false)
 
-  // Check backend connection saat App mount
+  // Saat App mount: cek koneksi backend, lalu cek validitas token (jika ada)
   useEffect(() => {
-    const checkConnection = async () => {
+    const init = async () => {
       try {
         await healthCheck()
         setIsConnected(true)
       } catch (error) {
         console.error('Backend connection failed:', error)
         setIsConnected(false)
+        setLoading(false)
+        return
+      }
+
+      const token = getToken()
+      if (!token) {
+        setIsAuthed(false)
+        setLoading(false)
+        return
+      }
+      try {
+        await authService.verify()
+        setIsAuthed(true)
+      } catch {
+        clearToken()
+        setIsAuthed(false)
       } finally {
         setLoading(false)
       }
     }
 
-    checkConnection()
+    init()
   }, [])
+
+  const handleLogout = () => {
+    clearToken()
+    setIsAuthed(false)
+  }
 
   if (loading) {
     return (
@@ -186,9 +255,13 @@ function App() {
     )
   }
 
+  if (!isAuthed) {
+    return <Login onSuccess={() => setIsAuthed(true)} />
+  }
+
   return (
     <Router>
-      <AppContent />
+      <AppContent onLogout={handleLogout} />
     </Router>
   )
 }

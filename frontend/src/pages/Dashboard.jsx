@@ -76,7 +76,8 @@ function Dashboard() {
     if (!qty || isNaN(qty)) return '-'
     if (assetType === 'btc' || assetType === 'crypto') return `${Number(qty).toFixed(8)} BTC`
     if (assetType === 'gold') return `${Number(qty).toFixed(4)} g`
-    if (assetType === 'saham') return `${Number(qty).toFixed(0)} lembar`
+    if (assetType === 'saham') return `${(Number(qty) / 100).toLocaleString('id-ID')} lot (${Number(qty).toLocaleString('id-ID')} lembar)`
+    if (assetType === 'barang') return `${Number(qty).toLocaleString('id-ID')} unit`
     return qty
   }
 
@@ -151,10 +152,12 @@ function Dashboard() {
             const cryptoObj = byAssetType.find(i => i._id === 'crypto') || {}
             const goldObj = byAssetType.find(i => i._id === 'gold') || {}
             const sahamObj = byAssetType.find(i => i._id === 'saham') || {}
+            const barangObj = byAssetType.find(i => i._id === 'barang') || {}
             return [
               { label: 'BITCOIN (BTC)', value: btcObj.sumQuantity || 0, type: 'btc' },
               { label: 'Emas (gram)', value: goldObj.sumQuantity || 0, type: 'gold' },
-              { label: 'Saham (lembar)', value: sahamObj.sumQuantity || 0, type: 'saham' },
+              { label: 'Saham', value: sahamObj.sumQuantity || 0, type: 'saham' },
+              { label: 'Barang Berharga', value: barangObj.sumQuantity || 0, type: 'barang' },
             ].map((item) => (
               <div key={item.type} className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
                 <p className="text-gray-700 font-medium text-sm mb-1">{item.label}</p>
@@ -219,16 +222,19 @@ function Dashboard() {
                     const cryptoObj = byAssetType.find(i => i._id === 'crypto') || { total: 0 }
                     const goldObj = byAssetType.find(i => i._id === 'gold') || { total: 0 }
                     const sahamObj = byAssetType.find(i => i._id === 'saham') || { total: 0 }
+                    const barangObj = byAssetType.find(i => i._id === 'barang') || { total: 0 }
                     const btcTotal = Number(btcObj.total || 0)
                     const cryptoTotal = Number(cryptoObj.total || 0)
                     const goldTotal = Number(goldObj.total || 0)
                     const sahamTotal = Number(sahamObj.total || 0)
+                    const barangTotal = Number(barangObj.total || 0)
                     const cashTotal = Number(totalCash || 0)
                     const data = [
                       { name: 'Cash', value: cashTotal },
                       { name: 'Crypto', value: btcTotal + cryptoTotal },
                       { name: 'Gold', value: goldTotal },
                       { name: 'Saham', value: sahamTotal },
+                      { name: 'Barang', value: barangTotal },
                     ]
                     const sum = data.reduce((s, d) => s + d.value, 0) || 0
                     if (sum > 0) {
@@ -253,7 +259,7 @@ function Dashboard() {
                   label={({ payload }) => `${payload.labelPercent}%`}
                   labelLine={false}
                 >
-                  {['#10B981', '#2563EB', '#C084FC', '#F59E0B'].map((color, idx) => (
+                  {['#10B981', '#2563EB', '#C084FC', '#F59E0B', '#EC4899'].map((color, idx) => (
                     <Cell key={color} fill={color} />
                   ))}
                 </Pie>

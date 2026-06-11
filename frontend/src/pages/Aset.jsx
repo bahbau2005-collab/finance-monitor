@@ -1,20 +1,23 @@
 import { useEffect, useState } from 'react'
-import { transactionService } from '../services/api'
+import { transactionService, cashService } from '../services/api'
 import * as XLSX from 'xlsx'
 
 function Aset() {
   // INPUT STATE
   const [formData, setFormData] = useState({
+    txType: 'buy',
     assetType: 'btc',
     assetName: '',
     nominal: '',
     quantity: '',
+    cashAccountId: '',
     transactionDate: new Date().toISOString().split('T')[0],
     description: '',
   })
   const [saving, setSaving] = useState(false)
   const [inputError, setInputError] = useState(null)
   const [inputSuccess, setInputSuccess] = useState(false)
+  const [cashAccounts, setCashAccounts] = useState([])
 
   // REPORT STATE
   const [transactions, setTransactions] = useState([])
@@ -24,8 +27,27 @@ function Aset() {
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [editingId, setEditingId] = useState(null)
   const [editData, setEditData] = useState(null)
+  const [expandedDesc, setExpandedDesc] = useState(new Set())
+
+  const toggleDesc = (id) => {
+    setExpandedDesc(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
 
   useEffect(() => { fetchTransactions() }, [filters])
+  useEffect(() => {
+    cashService.getAll()
+      .then(res => setCashAccounts(res.data?.data || res.data || []))
+      .catch(() => setCashAccounts([]))
+  }, [])
+
+  // Konversi satuan saham: input dalam LOT, disimpan dalam LEMBAR (1 lot = 100 lembar)
+  const LOT_SIZE = 100
+  const toStoredQty = (assetType, qty) => assetType === 'saham' ? Number(qty) * LOT_SIZE : Number(qty)
+  const toInputQty = (assetType, storedQty) => assetType === 'saham' ? Number(storedQty) / LOT_SIZE : Number(storedQty)
 
   // Handlers: Input
   const handleInputChange = (e) => {
@@ -49,7 +71,7 @@ function Aset() {
         setSaving(false)
         return
       }
-      if (['btc','crypto','gold','saham'].includes(formData.assetType)) {
+      if (['btc','crypto','gold','saham','barang'].includes(formData.assetType)) {
         if (!formData.quantity || Number(formData.quantity) <= 0) {
           setInputError('Jumlah harus diisi (>0) untuk tipe aset ini')
           setSaving(false)
@@ -59,12 +81,15 @@ function Aset() {
       await transactionService.create({
         ...formData,
         nominal: Number.parseInt(formData.nominal, 10),
-        quantity: formData.quantity ? Number.parseFloat(formData.quantity) : 0,
+        quantity: formData.quantity ? toStoredQty(formData.assetType, formData.quantity) : 0,
+        cashAccountId: formData.txType === 'sell' ? (formData.cashAccountId || undefined) : undefined,
       })
       setInputSuccess(true)
-      setFormData({ assetType: 'btc', assetName: '', nominal: '', quantity: '', transactionDate: new Date().toISOString().split('T')[0], description: '' })
+      setFormData({ txType: 'buy', assetType: 'btc', assetName: '', nominal: '', quantity: '', cashAccountId: '', transactionDate: new Date().toISOString().split('T')[0], description: '' })
       setTimeout(() => setInputSuccess(false), 2000)
       fetchTransactions()
+      // Refresh saldo cash account (jika ada penjualan yang masuk ke cash)
+      cashService.getAll().then(res => setCashAccounts(res.data?.data || res.data || [])).catch(() => {})
     } catch (err) {
       setInputError(err?.response?.data?.message || 'Gagal menyimpan transaksi')
     } finally {
@@ -144,7 +169,7 @@ function Aset() {
     const exampleData = [
       { 'Tanggal': '28/12/2025', 'Tipe Aset': 'btc', 'Nama Aset': 'Bitcoin', 'Jumlah': '0.5', 'Nominal (Rp)': '500000000', 'Deskripsi': 'Pembelian BTC' },
       { 'Tanggal': '28/12/2025', 'Tipe Aset': 'gold', 'Nama Aset': 'Emas Antam', 'Jumlah': '10', 'Nominal (Rp)': '12000000', 'Deskripsi': 'Investasi emas 10 gram' },
-      { 'Tanggal': '28/12/2025', 'Tipe Aset': 'saham', 'Nama Aset': 'BBCA', 'Jumlah': '100', 'Nominal (Rp)': '1000000', 'Deskripsi': '100 lembar saham BCA' },
+      { 'Tanggal': '28/12/2025', 'Tipe Aset': 'saham', 'Nama Aset': 'BBCA', 'Jumlah': '5', 'Nominal (Rp)': '1000000', 'Deskripsi': '5 lot (500 lembar) saham BCA' },
       { 'Tanggal': '28/12/2025', 'Tipe Aset': 'crypto', 'Nama Aset': 'Ethereum', 'Jumlah': '2', 'Nominal (Rp)': '80000000', 'Deskripsi': 'Pembelian ETH' }
     ]
     const wsExample = XLSX.utils.json_to_sheet(exampleData)
@@ -153,9 +178,9 @@ function Aset() {
     // Sheet 3: Panduan
     const guideData = [
       { 'Kolom': 'Tanggal', 'Format': 'DD/MM/YYYY atau YYYY-MM-DD', 'Contoh': '28/12/2025', 'Wajib': 'Ya' },
-      { 'Kolom': 'Tipe Aset', 'Format': 'btc / crypto / gold / saham', 'Contoh': 'btc', 'Wajib': 'Ya' },
+      { 'Kolom': 'Tipe Aset', 'Format': 'btc / crypto / gold / saham / barang', 'Contoh': 'btc', 'Wajib': 'Ya' },
       { 'Kolom': 'Nama Aset', 'Format': 'Teks bebas', 'Contoh': 'Bitcoin', 'Wajib': 'Ya' },
-      { 'Kolom': 'Jumlah', 'Format': 'Angka desimal', 'Contoh': '0.5 (untuk BTC), 10 (untuk gold)', 'Wajib': 'Ya (untuk btc/crypto/gold/saham)' },
+      { 'Kolom': 'Jumlah', 'Format': 'Angka desimal. Saham diisi dalam LOT (1 lot = 100 lembar)', 'Contoh': '0.5 (BTC), 10 (gram emas), 5 (lot saham)', 'Wajib': 'Ya (untuk btc/crypto/gold/saham)' },
       { 'Kolom': 'Nominal (Rp)', 'Format': 'Angka tanpa pemisah ribuan', 'Contoh': '500000000', 'Wajib': 'Ya' },
       { 'Kolom': 'Deskripsi', 'Format': 'Teks bebas', 'Contoh': 'Pembelian BTC', 'Wajib': 'Tidak' }
     ]
@@ -174,7 +199,7 @@ function Aset() {
       'Tanggal': new Date(tx.transactionDate).toLocaleDateString('id-ID'),
       'Tipe Aset': tx.assetType === 'btc' ? 'BTC' : (tx.assetType?.charAt(0).toUpperCase() + tx.assetType?.slice(1)),
       'Nama Aset': tx.assetName,
-      'Jumlah': tx.quantity || '',
+      'Jumlah': tx.quantity ? toInputQty(tx.assetType, tx.quantity) : '',
       'Nominal (Rp)': tx.nominal,
       'Deskripsi': tx.description || '-',
     }))
@@ -220,9 +245,12 @@ function Aset() {
           const parsed = new Date(tanggal)
           if (!Number.isNaN(parsed)) transactionDate = parsed.toISOString()
         }
-        const quantity = Number.parseFloat(String(qtyRaw).replace(/[^0-9.-]/g, '')) || 0
+        const assetType = String(tipe || '').toLowerCase()
+        const rawQty = Number.parseFloat(String(qtyRaw).replace(/[^0-9.-]/g, '')) || 0
+        // Saham: kolom Jumlah di Excel dalam LOT, disimpan dalam LEMBAR (1 lot = 100 lembar)
+        const quantity = rawQty ? toStoredQty(assetType, rawQty) : 0
         return {
-          assetType: String(tipe || '').toLowerCase(),
+          assetType,
           assetName: String(nama || '').trim(),
           nominal,
           quantity: quantity || undefined,
@@ -247,17 +275,25 @@ function Aset() {
     if (e.target) e.target.value = null
   }
 
-  // Quantity summary & formatters
-  const btcQty = transactions.filter(tx => tx.assetType === 'btc').reduce((s, tx) => s + (Number(tx.quantity) || 0), 0)
-  const goldQty = transactions.filter(tx => tx.assetType === 'gold').reduce((s, tx) => s + (Number(tx.quantity) || 0), 0)
-  const sahamQty = transactions.filter(tx => tx.assetType === 'saham').reduce((s, tx) => s + (Number(tx.quantity) || 0), 0)
+  // Quantity summary & formatters — jual (sell) dihitung sebagai pengurang
+  const sign = (tx) => (tx.txType === 'sell' ? -1 : 1)
+  const signedQty = (tx) => sign(tx) * (Number(tx.quantity) || 0)
+  const signedNominal = (tx) => sign(tx) * (Number(tx.nominal) || 0)
+  const btcQty = transactions.filter(tx => tx.assetType === 'btc').reduce((s, tx) => s + signedQty(tx), 0)
+  const goldQty = transactions.filter(tx => tx.assetType === 'gold').reduce((s, tx) => s + signedQty(tx), 0)
+  const sahamQty = transactions.filter(tx => tx.assetType === 'saham').reduce((s, tx) => s + signedQty(tx), 0)
+  const barangQty = transactions.filter(tx => tx.assetType === 'barang').reduce((s, tx) => s + signedQty(tx), 0)
   const formatCurrency = (n) => `Rp ${Number(n).toLocaleString('id-ID')}`
   const formatQuantityTx = (tx) => {
     const q = tx && (tx.quantity || tx.quantity === 0) ? Number(tx.quantity) : null
     if (q === null || Number.isNaN(q) || q === 0) return '-'
     if (tx.assetType === 'btc' || tx.assetType === 'crypto') return `${q.toFixed(8)}`
     if (tx.assetType === 'gold') return `${q.toFixed(4)} g`
-    if (tx.assetType === 'saham') return `${q.toFixed(0)} lembar`
+    if (tx.assetType === 'barang') return `${q.toLocaleString('id-ID')} unit`
+    if (tx.assetType === 'saham') {
+      const lot = q / LOT_SIZE
+      return `${lot.toLocaleString('id-ID')} lot (${q.toLocaleString('id-ID')} lembar)`
+    }
     return `${q}`
   }
 
@@ -265,10 +301,11 @@ function Aset() {
   const openEdit = (tx) => {
     setEditingId(tx._id)
     setEditData({
+      txType: tx.txType || 'buy',
       assetType: tx.assetType,
       assetName: tx.assetName,
       nominal: tx.nominal,
-      quantity: tx.quantity || '',
+      quantity: tx.quantity ? toInputQty(tx.assetType, tx.quantity) : '',
       transactionDate: new Date(tx.transactionDate).toISOString().split('T')[0],
       description: tx.description || '',
     })
@@ -286,10 +323,11 @@ function Aset() {
     e.preventDefault()
     if (!editData) return
     const payload = {
+      txType: editData.txType,
       assetType: editData.assetType,
       assetName: editData.assetName,
       nominal: Number(editData.nominal),
-      quantity: editData.quantity ? Number(editData.quantity) : undefined,
+      quantity: editData.quantity ? toStoredQty(editData.assetType, editData.quantity) : undefined,
       transactionDate: editData.transactionDate,
       description: editData.description,
     }
@@ -312,6 +350,25 @@ function Aset() {
       {/* INPUT SECTION */}
       <div className="card">
         <h3 className="text-base lg:text-lg font-semibold text-gray-900 mb-4">Tambah Transaksi Aset</h3>
+
+        {/* Toggle Beli / Jual */}
+        <div className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1 mb-5">
+          <button
+            type="button"
+            onClick={() => setFormData(prev => ({ ...prev, txType: 'buy', cashAccountId: '' }))}
+            className={`px-5 py-2 rounded-md text-sm font-medium transition-all ${formData.txType === 'buy' ? 'bg-green-600 text-white shadow' : 'text-gray-600 hover:text-gray-900'}`}
+          >
+            Beli / Tambah
+          </button>
+          <button
+            type="button"
+            onClick={() => setFormData(prev => ({ ...prev, txType: 'sell' }))}
+            className={`px-5 py-2 rounded-md text-sm font-medium transition-all ${formData.txType === 'sell' ? 'bg-red-600 text-white shadow' : 'text-gray-600 hover:text-gray-900'}`}
+          >
+            Jual / Kurangi
+          </button>
+        </div>
+
         {inputSuccess && (
           <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded">
             <p className="text-green-700">✓ Transaksi berhasil disimpan!</p>
@@ -330,6 +387,7 @@ function Aset() {
                 <option value="crypto">Cryptocurrency (Other)</option>
                 <option value="saham">Saham</option>
                 <option value="gold">Emas / Logam Mulia</option>
+                <option value="barang">Barang Berharga (Jam, Tas, dll)</option>
               </select>
             </div>
             <div>
@@ -337,22 +395,39 @@ function Aset() {
               <input id="assetName" type="text" name="assetName" value={formData.assetName} onChange={handleInputChange} className="input-field" placeholder="Contoh: Bitcoin, Emas Antam" />
             </div>
             <div>
-              <label htmlFor="nominal" className="block text-sm font-medium text-gray-700 mb-2">Nominal Transaksi (Rp)</label>
+              <label htmlFor="nominal" className="block text-sm font-medium text-gray-700 mb-2">{formData.txType === 'sell' ? 'Hasil Penjualan (Rp)' : 'Modal / Nominal Beli (Rp)'}</label>
               <input id="nominal" type="number" name="nominal" value={formData.nominal} onChange={handleInputChange} className="input-field" placeholder="5000000" min="0" />
             </div>
+            {formData.txType === 'sell' && (
+              <div>
+                <label htmlFor="cashAccountId" className="block text-sm font-medium text-gray-700 mb-2">Hasil masuk ke rekening</label>
+                <select id="cashAccountId" name="cashAccountId" value={formData.cashAccountId} onChange={handleInputChange} className="input-field">
+                  <option value="">— Tidak masuk Cash (catat saja) —</option>
+                  {cashAccounts.map(acc => (
+                    <option key={acc._id} value={acc._id}>{acc.name} (Rp {Number(acc.balance || 0).toLocaleString('id-ID')})</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div>
               <label htmlFor="transactionDate" className="block text-sm font-medium text-gray-700 mb-2">Tanggal Transaksi</label>
               <input id="transactionDate" type="date" name="transactionDate" value={formData.transactionDate} onChange={handleInputChange} className="input-field" />
             </div>
-            {['btc','crypto','gold','saham'].includes(formData.assetType) && (
+            {['btc','crypto','gold','saham','barang'].includes(formData.assetType) && (
               <div>
                 {(() => {
-                  const unit = (formData.assetType === 'btc' || formData.assetType === 'crypto') ? 'koin' : (formData.assetType === 'gold' ? 'gram' : 'lembar')
-                  const ph = (formData.assetType === 'btc' || formData.assetType === 'crypto') ? '0.025' : (formData.assetType === 'gold' ? '1.5 (gram)' : '10 (lembar)')
+                  const unit = (formData.assetType === 'btc' || formData.assetType === 'crypto') ? 'koin' : (formData.assetType === 'gold' ? 'gram' : (formData.assetType === 'barang' ? 'unit' : 'lot'))
+                  const ph = (formData.assetType === 'btc' || formData.assetType === 'crypto') ? '0.025' : (formData.assetType === 'gold' ? '1.5 (gram)' : (formData.assetType === 'barang' ? '1 (unit)' : '5 (lot)'))
+                  const lotHint = formData.assetType === 'saham' && formData.quantity && Number(formData.quantity) > 0
+                    ? `= ${(Number(formData.quantity) * LOT_SIZE).toLocaleString('id-ID')} lembar`
+                    : null
                   return (
                     <>
                       <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-2">Jumlah ({unit})</label>
                       <input id="quantity" type="number" step="any" name="quantity" value={formData.quantity} onChange={handleInputChange} className="input-field" placeholder={ph} />
+                      {formData.assetType === 'saham' && (
+                        <p className="mt-1 text-xs text-gray-500">{lotHint || '1 lot = 100 lembar'}</p>
+                      )}
                     </>
                   )
                 })()}
@@ -364,7 +439,7 @@ function Aset() {
             </div>
             <div className="md:col-span-2 flex gap-4">
               <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Menyimpan...' : 'Simpan Transaksi'}</button>
-              <button type="reset" className="btn btn-secondary" onClick={() => setFormData({ assetType: 'btc', assetName: '', nominal: '', quantity: '', transactionDate: new Date().toISOString().split('T')[0], description: '' })}>Reset</button>
+              <button type="reset" className="btn btn-secondary" onClick={() => setFormData({ txType: 'buy', assetType: 'btc', assetName: '', nominal: '', quantity: '', cashAccountId: '', transactionDate: new Date().toISOString().split('T')[0], description: '' })}>Reset</button>
             </div>
           </form>
         </div>
@@ -386,6 +461,7 @@ function Aset() {
               <option value="crypto">Cryptocurrency (Other)</option>
               <option value="saham">Saham</option>
               <option value="gold">Emas / Logam Mulia</option>
+              <option value="barang">Barang Berharga (Jam, Tas, dll)</option>
             </select>
           </div>
           <div>
@@ -437,10 +513,28 @@ function Aset() {
                   <td className="px-4 py-3 text-left"><input type="checkbox" className="w-4 h-4" checked={selectedIds.has(tx._id)} onChange={() => handleSelectRow(tx._id)} /></td>
                   <td className="px-4 py-3 text-sm">{new Date(tx.transactionDate).toLocaleDateString('id-ID')}</td>
                   <td className="px-4 py-3 text-sm"><span className="inline-block px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium" style={{textTransform: tx.assetType === 'btc' ? 'uppercase' : 'capitalize'}}>{tx.assetType === 'btc' ? 'BTC' : tx.assetType}</span></td>
-                  <td className="px-4 py-3 text-sm font-medium">{tx.assetName}</td>
-                  <td className="px-4 py-3 text-sm text-center">{formatQuantityTx(tx)}</td>
-                  <td className="px-4 py-3 text-sm text-right font-semibold text-green-600">Rp {tx.nominal.toLocaleString('id-ID')}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600 max-w-xs truncate">{tx.description || '-'}</td>
+                  <td className="px-4 py-3 text-sm font-medium">
+                    <span className="flex items-center gap-2">
+                      {tx.assetName}
+                      <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold ${tx.txType === 'sell' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                        {tx.txType === 'sell' ? 'JUAL' : 'BELI'}
+                      </span>
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-center">{tx.txType === 'sell' ? '−' : ''}{formatQuantityTx(tx)}</td>
+                  <td className={`px-4 py-3 text-sm text-right font-semibold ${tx.txType === 'sell' ? 'text-red-600' : 'text-green-600'}`}>{tx.txType === 'sell' ? '− ' : ''}Rp {tx.nominal.toLocaleString('id-ID')}</td>
+                  <td className="px-4 py-3 text-sm text-gray-600 max-w-xs">
+                    {tx.description ? (
+                      <button
+                        type="button"
+                        onClick={() => toggleDesc(tx._id)}
+                        title={expandedDesc.has(tx._id) ? 'Klik untuk ringkas' : tx.description}
+                        className={`text-left w-full hover:text-blue-600 ${expandedDesc.has(tx._id) ? 'whitespace-pre-wrap break-words' : 'truncate'}`}
+                      >
+                        {tx.description}
+                      </button>
+                    ) : '-'}
+                  </td>
                   <td className="px-4 py-3 text-center space-x-2">
                     <button onClick={() => openEdit(tx)} className="text-blue-600 hover:text-blue-800 font-medium text-sm">Edit</button>
                     <button onClick={() => handleDelete(tx._id)} className="text-red-500 hover:text-red-700 font-medium text-sm">Hapus</button>
@@ -458,6 +552,13 @@ function Aset() {
           <div role="dialog" aria-modal="true" className="relative bg-white rounded-lg shadow-lg p-6 z-60 w-full max-w-xl mx-4" style={{zIndex:60}} onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-semibold mb-4">Edit Transaksi</h3>
             <form onSubmit={handleUpdateSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="editTxType" className="block text-sm font-medium text-gray-700 mb-1">Jenis Transaksi</label>
+                <select id="editTxType" name="txType" value={editData.txType} onChange={handleEditChange} className="input-field">
+                  <option value="buy">Beli / Tambah</option>
+                  <option value="sell">Jual / Kurangi</option>
+                </select>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label htmlFor="editAssetType" className="block text-sm font-medium text-gray-700 mb-1">Tipe Aset</label>
@@ -466,6 +567,7 @@ function Aset() {
                     <option value="crypto">Cryptocurrency (Other)</option>
                     <option value="saham">Saham</option>
                     <option value="gold">Emas / Logam Mulia</option>
+                    <option value="barang">Barang Berharga (Jam, Tas, dll)</option>
                   </select>
                 </div>
                 <div>
@@ -483,10 +585,13 @@ function Aset() {
                   <input id="editDate" name="transactionDate" type="date" value={editData.transactionDate} onChange={handleEditChange} className="input-field" />
                 </div>
               </div>
-              {['btc','crypto','gold','saham'].includes(editData.assetType) && (
+              {['btc','crypto','gold','saham','barang'].includes(editData.assetType) && (
                 <div>
-                  <label htmlFor="editQuantity" className="block text-sm font-medium text-gray-700 mb-1">Jumlah (koin/gram/lembar)</label>
+                  <label htmlFor="editQuantity" className="block text-sm font-medium text-gray-700 mb-1">Jumlah ({editData.assetType === 'saham' ? 'lot' : (editData.assetType === 'barang' ? 'unit' : 'koin/gram')})</label>
                   <input id="editQuantity" name="quantity" type="number" step="any" value={editData.quantity} onChange={handleEditChange} className="input-field" />
+                  {editData.assetType === 'saham' && (
+                    <p className="mt-1 text-xs text-gray-500">{editData.quantity && Number(editData.quantity) > 0 ? `= ${(Number(editData.quantity) * LOT_SIZE).toLocaleString('id-ID')} lembar` : '1 lot = 100 lembar'}</p>
+                  )}
                 </div>
               )}
               <div>
@@ -513,12 +618,12 @@ function Aset() {
               <p className="text-2xl font-bold text-blue-600">{transactions.length}</p>
             </div>
             <div className="card text-center">
-              <p className="text-gray-600 text-sm">Total Nominal</p>
-              <p className="text-2xl font-bold text-green-600">{formatCurrency(transactions.reduce((s, tx) => s + tx.nominal, 0))}</p>
+              <p className="text-gray-600 text-sm">Nilai Bersih (Beli − Jual)</p>
+              <p className="text-2xl font-bold text-green-600">{formatCurrency(transactions.reduce((s, tx) => s + signedNominal(tx), 0))}</p>
             </div>
             <div className="card text-center">
-              <p className="text-gray-600 text-sm">Rata-rata Nominal</p>
-              <p className="text-2xl font-bold text-purple-600">{formatCurrency(Math.round(transactions.reduce((s, tx) => s + tx.nominal, 0) / transactions.length))}</p>
+              <p className="text-gray-600 text-sm">Total Nilai Beli</p>
+              <p className="text-2xl font-bold text-purple-600">{formatCurrency(transactions.filter(tx => tx.txType !== 'sell').reduce((s, tx) => s + (Number(tx.nominal) || 0), 0))}</p>
             </div>
           </div>
 
@@ -526,10 +631,10 @@ function Aset() {
           <div className="card">
             <h4 className="text-lg font-semibold text-gray-900 mb-4">Total Jumlah Aset</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[{ label: 'BITCOIN (BTC)', qty: btcQty, unit: 'BTC', format: (q) => q.toFixed(8) }, { label: 'Emas (gram)', qty: goldQty, unit: 'g', format: (q) => q.toFixed(4) }, { label: 'Saham (lembar)', qty: sahamQty, unit: 'lembar', format: (q) => q.toFixed(0) }].map(item => (
+              {[{ label: 'BITCOIN (BTC)', qty: btcQty, unit: 'BTC', format: (q) => q.toFixed(8) }, { label: 'Emas (gram)', qty: goldQty, unit: 'g', format: (q) => q.toFixed(4) }, { label: 'Saham', qty: sahamQty, unit: 'lot', format: (q) => `${(q / LOT_SIZE).toLocaleString('id-ID')} lot (${q.toLocaleString('id-ID')} lembar)`, raw: true }, { label: 'Barang Berharga', qty: barangQty, unit: 'unit', format: (q) => q.toLocaleString('id-ID') }].map(item => (
                 <div key={item.label} className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
                   <p className="text-gray-700 font-medium text-sm mb-1">{item.label}</p>
-                  <p className="text-2xl font-bold text-blue-600">{item.qty > 0 ? `${item.format(item.qty)} ${item.unit}` : '-'}</p>
+                  <p className="text-2xl font-bold text-blue-600">{item.qty > 0 ? (item.raw ? item.format(item.qty) : `${item.format(item.qty)} ${item.unit}`) : '-'}</p>
                 </div>
               ))}
             </div>

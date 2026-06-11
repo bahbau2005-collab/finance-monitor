@@ -17,8 +17,15 @@ const mongoose = require('mongoose');
 const transactionSchema = new mongoose.Schema({
   assetType: {
     type: String,
-    enum: ['btc', 'crypto', 'cash', 'gold', 'saham'],
+    enum: ['btc', 'crypto', 'cash', 'gold', 'saham', 'barang'],
     required: [true, 'Asset type harus dipilih'],
+  },
+  // 'buy' = beli/nambah aset, 'sell' = jual/kurangi aset.
+  // Default 'buy' supaya transaksi lama tetap terhitung sebagai pembelian.
+  txType: {
+    type: String,
+    enum: ['buy', 'sell'],
+    default: 'buy',
   },
   assetName: {
     type: String,

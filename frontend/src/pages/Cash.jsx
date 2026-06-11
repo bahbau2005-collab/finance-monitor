@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { cashService } from '../services/api'
-import * as XLSX from 'xlsx'
 
 function Cash() {
   const [accounts, setAccounts] = useState([])
@@ -68,41 +67,8 @@ function Cash() {
     }
   }
 
-  const handleExportExcel = () => {
-    if (accounts.length === 0) { 
-      alert('Tidak ada data untuk diekspor')
-      return 
-    }
-    const data = accounts.map(acc => ({
-      'Nama Rekening': acc.name,
-      'Saldo (Rp)': acc.balance,
-      'Terakhir Diupdate': acc.lastUpdated ? new Date(acc.lastUpdated).toLocaleString('id-ID') : '-',
-    }))
-    const totalBalance = accounts.reduce((s, a) => s + (Number(a.balance) || 0), 0)
-    const wb = XLSX.utils.book_new()
-    const ws = XLSX.utils.json_to_sheet(data)
-    ws['!cols'] = [{ wch: 25 }, { wch: 18 }, { wch: 20 }]
-    
-    const wsSummary = XLSX.utils.json_to_sheet([
-      {},
-      { 'Nama Rekening': 'RINGKASAN' },
-      { 'Nama Rekening': 'Total Rekening', 'Saldo (Rp)': accounts.length },
-      { 'Nama Rekening': 'Total Saldo', 'Saldo (Rp)': totalBalance },
-    ])
-    wsSummary['!cols'] = [{ wch: 25 }, { wch: 18 }, { wch: 20 }]
-    
-    XLSX.utils.book_append_sheet(wb, ws, 'Cash Accounts')
-    XLSX.utils.book_append_sheet(wb, wsSummary, 'Ringkasan')
-    XLSX.writeFile(wb, `Laporan-Cash-${new Date().toISOString().split('T')[0]}.xlsx`)
-  }
-
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl lg:text-3xl font-bold">Cash Accounts</h1>
-        <p className="text-xs lg:text-sm text-gray-600">Kelola rekening tunai Anda (bank, dompet, dll)</p>
-      </div>
-
       {/* TOTAL CASH */}
       <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
         <div className="card">
@@ -113,12 +79,9 @@ function Cash() {
           <p className="text-gray-500 text-xs mt-2">Jumlah saldo pada semua rekening cash</p>
         </div>
       </div>
-
-      {/* Excel Export Button */}
-      <div className="mb-6 flex justify-end">
-        <button onClick={handleExportExcel} className="btn btn-primary flex items-center gap-2">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>Export Excel
-        </button>
+      <div className="mb-6">
+        <h1 className="text-2xl lg:text-3xl font-bold">Cash Accounts</h1>
+        <p className="text-xs lg:text-sm text-gray-600">Kelola rekening tunai Anda (bank, dompet, dll)</p>
       </div>
 
       <div className="card mb-6">

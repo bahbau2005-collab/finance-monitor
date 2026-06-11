@@ -1,12 +1,32 @@
 const Transaction = require('../models/Transaction');
+const CashAccount = require('../models/CashAccount');
+
+/**
+ * Hitung sisa holding (quantity) sebuah aset saat ini.
+ * Beli menambah, jual mengurangi. Dipakai untuk validasi jual.
+ */
+async function getCurrentHolding(assetType, assetName) {
+  const result = await Transaction.aggregate([
+    { $match: { assetType, assetName } },
+    {
+      $group: {
+        _id: null,
+        qty: {
+          $sum: { $cond: [{ $eq: ['$txType', 'sell'] }, { $multiply: ['$quantity', -1] }, '$quantity'] },
+        },
+      },
+    },
+  ]);
+  return result[0]?.qty || 0;
+}
 
 /**
  * CREATE TRANSACTION
- * Untuk menambah transaksi baru
+ * Untuk menambah transaksi baru (beli atau jual)
  */
 exports.createTransaction = async (req, res) => {
   try {
-    const { assetType, assetName, nominal, transactionDate, description, quantity } = req.body;
+    const { assetType, assetName, nominal, transactionDate, description, quantity, txType, cashAccountId } = req.body;
 
     // Cek apakah semua field required sudah ada
     if (!assetType || !assetName || nominal == null || !transactionDate) {
@@ -24,10 +44,36 @@ exports.createTransaction = async (req, res) => {
       });
     }
 
+    const type = txType === 'sell' ? 'sell' : 'buy';
+
     // For asset types that represent units, quantity should be provided
-    const unitTypes = ['crypto', 'gold', 'saham'];
+    const unitTypes = ['crypto', 'gold', 'saham', 'barang'];
     if (unitTypes.includes(assetType) && (quantity == null || isNaN(Number(quantity)))) {
       return res.status(400).json({ success: false, message: 'Quantity harus diisi untuk tipe aset ini' });
+    }
+
+    const qty = Number(quantity) || 0;
+
+    // Validasi khusus penjualan: holding harus cukup
+    let cashAccount = null;
+    if (type === 'sell') {
+      if (qty > 0) {
+        const holding = await getCurrentHolding(assetType, assetName);
+        if (qty > holding + 1e-9) {
+          return res.status(400).json({
+            success: false,
+            message: `Jumlah jual (${qty}) melebihi holding saat ini (${holding}) untuk ${assetName}`,
+          });
+        }
+      }
+
+      // Jika ada rekening tujuan, hasil jual masuk ke Cash
+      if (cashAccountId) {
+        cashAccount = await CashAccount.findById(cashAccountId);
+        if (!cashAccount) {
+          return res.status(400).json({ success: false, message: 'Rekening Cash tujuan tidak ditemukan' });
+        }
+      }
     }
 
     // Buat transaksi baru
@@ -35,7 +81,8 @@ exports.createTransaction = async (req, res) => {
       assetType,
       assetName,
       nominal,
-      quantity: Number(quantity) || 0,
+      quantity: qty,
+      txType: type,
       transactionDate: new Date(transactionDate),
       description: description || '',
     });
@@ -43,10 +90,18 @@ exports.createTransaction = async (req, res) => {
     // Simpan ke database
     await transaction.save();
 
+    // Setelah transaksi tersimpan, tambahkan hasil jual ke rekening Cash
+    if (cashAccount) {
+      cashAccount.balance += Number(nominal);
+      cashAccount.lastUpdated = Date.now();
+      await cashAccount.save();
+    }
+
     res.status(201).json({
       success: true,
-      message: 'Transaksi berhasil ditambahkan',
+      message: type === 'sell' ? 'Penjualan aset berhasil dicatat' : 'Transaksi berhasil ditambahkan',
       data: transaction,
+      cashAccount: cashAccount || undefined,
     });
   } catch (error) {
     res.status(500).json({
@@ -179,7 +234,7 @@ exports.getTransactionById = async (req, res) => {
 exports.updateTransaction = async (req, res) => {
   try {
     const { id } = req.params;
-    const { assetType, assetName, nominal, transactionDate, description, quantity } = req.body;
+    const { assetType, assetName, nominal, transactionDate, description, quantity, txType } = req.body;
 
     const updatePayload = {
       assetType,
@@ -189,6 +244,7 @@ exports.updateTransaction = async (req, res) => {
       description,
     };
     if (quantity != null) updatePayload.quantity = Number(quantity);
+    if (txType === 'buy' || txType === 'sell') updatePayload.txType = txType;
 
     const transaction = await Transaction.findByIdAndUpdate(
       id,
@@ -254,24 +310,28 @@ exports.deleteTransaction = async (req, res) => {
  */
 exports.getDashboardSummary = async (req, res) => {
   try {
-    // Total nominal per asset type
+    // Nilai bertanda: beli (+), jual (-). Dipakai agar penjualan mengurangi total & holding.
+    const signedNominal = { $cond: [{ $eq: ['$txType', 'sell'] }, { $multiply: ['$nominal', -1] }, '$nominal'] };
+    const signedQuantity = { $cond: [{ $eq: ['$txType', 'sell'] }, { $multiply: ['$quantity', -1] }, '$quantity'] };
+
+    // Total nominal per asset type (net: beli - jual)
     const summaryByAssetType = await Transaction.aggregate([
       {
         $group: {
           _id: '$assetType',
-          total: { $sum: '$nominal' },
+          total: { $sum: signedNominal },
           count: { $sum: 1 },
-          sumQuantity: { $sum: '$quantity' },
+          sumQuantity: { $sum: signedQuantity },
         },
       },
     ]);
 
-    // Total semua aset
+    // Total semua aset (net)
     const totalAssets = await Transaction.aggregate([
       {
         $group: {
           _id: null,
-          total: { $sum: '$nominal' },
+          total: { $sum: signedNominal },
         },
       },
     ]);

@@ -7,7 +7,17 @@ import {
 
 const formatCurrency = (n) => `Rp ${Number(n || 0).toLocaleString('id-ID')}`
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
-const PIE_COLORS = ['#EF4444', '#F59E0B', '#8B5CF6', '#EC4899', '#3B82F6', '#10B981', '#14B8A6', '#6B7280']
+const PIE_COLORS = ['#C0453F', '#B8843A', '#7E5BB0', '#B05080', '#3E6B8A', '#2F7A55', '#2C8A82', '#6E6A61']
+
+function shade(hex, pct) {
+  const n = parseInt(hex.slice(1), 16)
+  let r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255
+  const t = pct < 0 ? 0 : 255, p = Math.abs(pct)
+  r = Math.round((t - r) * p) + r
+  g = Math.round((t - g) * p) + g
+  b = Math.round((t - b) * p) + b
+  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`
+}
 
 const monthKey = (d) => {
   const dt = new Date(d)
@@ -110,13 +120,25 @@ function Laporan() {
             <div style={{ width: '100%', height: 300 }}>
               <ResponsiveContainer>
                 <BarChart data={trend} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="barUp" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--up-hi)" />
+                      <stop offset="60%" stopColor="var(--up-mid)" />
+                      <stop offset="100%" stopColor="var(--up-lo)" />
+                    </linearGradient>
+                    <linearGradient id="barDown" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--down-hi)" />
+                      <stop offset="60%" stopColor="var(--down-mid)" />
+                      <stop offset="100%" stopColor="var(--down-lo)" />
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="label" tick={{ fontSize: 12 }} />
                   <YAxis tickFormatter={shortRp} tick={{ fontSize: 12 }} width={48} />
                   <Tooltip formatter={(v) => formatCurrency(v)} />
                   <Legend />
-                  <Bar dataKey="Pemasukan" fill="var(--up-fill)" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Pengeluaran" fill="var(--down-fill)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Pemasukan" fill="url(#barUp)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Pengeluaran" fill="url(#barDown)" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -132,8 +154,17 @@ function Laporan() {
                 <div style={{ width: '100%', height: 260 }}>
                   <ResponsiveContainer>
                     <PieChart>
-                      <Pie data={expenseByCat} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} innerRadius={45}>
-                        {expenseByCat.map((entry, idx) => <Cell key={entry.name} fill={PIE_COLORS[idx % PIE_COLORS.length]} />)}
+                      <defs>
+                        {PIE_COLORS.map((c, i) => (
+                          <linearGradient key={i} id={`lpie${i}`} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor={shade(c, 0.3)} />
+                            <stop offset="55%" stopColor={c} />
+                            <stop offset="100%" stopColor={shade(c, -0.18)} />
+                          </linearGradient>
+                        ))}
+                      </defs>
+                      <Pie data={expenseByCat} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} innerRadius={45} stroke="var(--surface)" strokeWidth={2}>
+                        {expenseByCat.map((entry, idx) => <Cell key={entry.name} fill={`url(#lpie${idx % PIE_COLORS.length})`} />)}
                       </Pie>
                       <Tooltip formatter={(v) => formatCurrency(v)} />
                     </PieChart>

@@ -9,6 +9,17 @@ import {
   Legend,
 } from 'recharts'
 
+// Lighten (pct>0) / darken (pct<0) sebuah warna hex — untuk efek kilau gradien
+function shade(hex, pct) {
+  const n = parseInt(hex.slice(1), 16)
+  let r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255
+  const t = pct < 0 ? 0 : 255, p = Math.abs(pct)
+  r = Math.round((t - r) * p) + r
+  g = Math.round((t - g) * p) + g
+  b = Math.round((t - b) * p) + b
+  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`
+}
+
 function Dashboard({ dark }) {
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -202,6 +213,15 @@ function Dashboard({ dark }) {
           <div style={{ width: '100%', height: 260 }}>
             <ResponsiveContainer>
               <PieChart>
+                <defs>
+                  {PIE_COLORS.map((c, i) => (
+                    <linearGradient key={i} id={`dpie${i}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={shade(c, 0.3)} />
+                      <stop offset="55%" stopColor={c} />
+                      <stop offset="100%" stopColor={shade(c, -0.18)} />
+                    </linearGradient>
+                  ))}
+                </defs>
                 <Pie
                   dataKey="value"
                   data={(() => {
@@ -237,7 +257,7 @@ function Dashboard({ dark }) {
                   stroke="var(--surface)"
                   strokeWidth={2}
                 >
-                  {PIE_COLORS.map((color) => <Cell key={color} fill={color} />)}
+                  {PIE_COLORS.map((color, i) => <Cell key={color} fill={`url(#dpie${i})`} />)}
                 </Pie>
                 <Tooltip formatter={(value) => `Rp ${Number(value).toLocaleString('id-ID')}`} contentStyle={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 10, color: 'var(--ink)' }} />
                 <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: 12 }} formatter={(value) => <span style={{ color: 'var(--ink-soft)' }}>{value}</span>} />

@@ -66,6 +66,7 @@ api.interceptors.response.use(
 export const authService = {
   login: (password) => api.post('/auth/login', { password }),
   verify: () => api.get('/auth/verify'),
+  changePassword: (currentPassword, newPassword) => api.post('/auth/change-password', { currentPassword, newPassword }),
 };
 
 // ============================================

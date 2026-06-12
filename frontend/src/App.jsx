@@ -8,6 +8,7 @@ import Aset from './pages/Aset'
 import Cash from './pages/Cash'
 import HutangPiutang from './pages/HutangPiutang'
 import Login from './pages/Login'
+import ChangePasswordModal from './components/ChangePasswordModal'
 
 // Elegant line icons (transparent, inherit color via currentColor)
 const iconProps = {
@@ -55,6 +56,7 @@ const HutangPiutangIcon = () => (
 function AppContent({ onLogout }) {
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [pwOpen, setPwOpen] = useState(false)
 
   // Close sidebar when route changes on mobile
   useEffect(() => {
@@ -71,6 +73,17 @@ function AppContent({ onLogout }) {
               <h1 className="text-2xl lg:text-3xl font-bold text-white tracking-tight">Finance Monitor</h1>
               <p className="text-blue-100 text-xs lg:text-sm mt-1">Personal Finance Management System</p>
             </div>
+            {/* Tombol Ganti Password */}
+            <button
+              onClick={() => setPwOpen(true)}
+              className="ml-2 px-3 py-2 hover:bg-blue-500 rounded-lg transition-colors flex items-center gap-2 text-white"
+              title="Ganti Password"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a4 4 0 11-8 0 4 4 0 018 0zM7 11a5 5 0 00-5 5v1h10M16 11l5 5m0-5l-5 5" />
+              </svg>
+              <span className="hidden sm:inline text-sm font-medium">Password</span>
+            </button>
             {/* Tombol Logout */}
             <button
               onClick={onLogout}
@@ -184,6 +197,9 @@ function AppContent({ onLogout }) {
           <p>© 2025 Finance Monitor. Elegant Financial Management.</p>
         </div>
       </footer>
+
+      {/* Modal Ganti Password */}
+      <ChangePasswordModal open={pwOpen} onClose={() => setPwOpen(false)} />
     </div>
   )
 }

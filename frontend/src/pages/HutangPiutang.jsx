@@ -589,44 +589,6 @@ function HutangPiutang() {
           </table>
         )}
 
-        {(paymentForId || paymentEdit) && (
-          <div className="fixed inset-0 z-50 flex items-start justify-center pt-20">
-            <div className="fixed inset-0 bg-black opacity-40" style={{zIndex:50}} onClick={closePaymentModal}></div>
-            <div className="relative bg-white rounded-lg shadow-lg p-6 z-60 w-full max-w-md mx-4" style={{zIndex:60}} onClick={e => e.stopPropagation()}>
-              <h3 className="text-lg font-semibold mb-4">
-                {paymentEdit ? 'Edit Pembayaran' : 'Catat Pembayaran'}
-              </h3>
-              <form onSubmit={submitPayment} className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Jumlah</label>
-                  <input type="number" value={paymentForm.amount} onChange={e => setPaymentForm(prev => ({...prev, amount: e.target.value}))} className="input-field" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal</label>
-                  <input type="date" value={paymentForm.date} onChange={e => setPaymentForm(prev => ({...prev, date: e.target.value}))} className="input-field" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Catatan (opsional)</label>
-                  <input type="text" value={paymentForm.note} onChange={e => setPaymentForm(prev => ({...prev, note: e.target.value}))} className="input-field" />
-                </div>
-                <div className="flex justify-between gap-2">
-                  <button type="button" className="btn btn-secondary" onClick={closePaymentModal}>Batal</button>
-                  <div className="flex gap-2">
-                    {paymentEdit && (
-                      <button type="button" className="btn btn-danger" onClick={() => deletePayment(paymentEdit.debtId, paymentEdit.index)} disabled={savingPayment}>
-                        Hapus
-                      </button>
-                    )}
-                    <button type="submit" className="btn btn-primary disabled:opacity-60 disabled:cursor-not-allowed" disabled={savingPayment}>
-                      {savingPayment ? 'Menyimpan...' : 'Simpan'}
-                    </button>
-                  </div>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
         {/* Bulk actions */}
         {selectedIds.size > 0 && (
           <div className="mt-4 flex justify-end">
@@ -634,6 +596,62 @@ function HutangPiutang() {
           </div>
         )}
       </div>
+
+      {/* MODAL: Catat / Edit Pembayaran (bottom-sheet di HP, dialog di desktop) */}
+      {(paymentForId || paymentEdit) && (() => {
+        const activeDebt = debts.find(d => d._id === (paymentForId || paymentEdit?.debtId))
+        const sisa = activeDebt ? Math.max(0, (Number(activeDebt.amount) || 0) - (Number(activeDebt.paid) || 0)) : 0
+        return (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
+            <div className="absolute inset-0 bg-black/50" onClick={closePaymentModal}></div>
+            <div className="relative bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+              {/* Header sticky */}
+              <div className="px-5 pt-5 pb-3 border-b border-gray-100 sticky top-0 bg-white">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900">{paymentEdit ? 'Edit Pembayaran' : 'Catat Pembayaran'}</h3>
+                  <button type="button" onClick={closePaymentModal} className="text-gray-400 hover:text-gray-600 text-3xl leading-none px-2 -mr-2" aria-label="Tutup">&times;</button>
+                </div>
+                {activeDebt && (
+                  <p className="mt-1 text-sm text-gray-500">
+                    <span className="font-medium text-gray-700">{activeDebt.personName}</span>
+                    {' · Sisa '}
+                    <span className="font-semibold text-yellow-700">{formatCurrency(sisa)}</span>
+                  </p>
+                )}
+              </div>
+
+              <form onSubmit={submitPayment} className="p-5 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Jumlah Bayar</label>
+                  <input type="number" inputMode="numeric" value={paymentForm.amount} onChange={e => setPaymentForm(prev => ({ ...prev, amount: e.target.value }))} className="input-field text-base" placeholder="Contoh: 100000" autoFocus />
+                  {!paymentEdit && sisa > 0 && (
+                    <button type="button" onClick={() => setPaymentForm(prev => ({ ...prev, amount: String(sisa) }))} className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-800">
+                      Isi penuh — lunaskan {formatCurrency(sisa)}
+                    </button>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Tanggal</label>
+                  <input type="date" value={paymentForm.date} onChange={e => setPaymentForm(prev => ({ ...prev, date: e.target.value }))} className="input-field text-base" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Catatan (opsional)</label>
+                  <input type="text" value={paymentForm.note} onChange={e => setPaymentForm(prev => ({ ...prev, note: e.target.value }))} className="input-field text-base" placeholder="Misal: transfer BCA" />
+                </div>
+                <div className="flex flex-col-reverse sm:flex-row sm:justify-between gap-2 pt-2">
+                  <button type="button" className="btn btn-secondary w-full sm:w-auto" onClick={closePaymentModal}>Batal</button>
+                  <div className="flex gap-2">
+                    {paymentEdit && (
+                      <button type="button" className="btn btn-danger flex-1 sm:flex-none" onClick={() => deletePayment(paymentEdit.debtId, paymentEdit.index)} disabled={savingPayment}>Hapus</button>
+                    )}
+                    <button type="submit" className="btn btn-primary flex-1 sm:flex-none disabled:opacity-60 disabled:cursor-not-allowed" disabled={savingPayment}>{savingPayment ? 'Menyimpan...' : 'Simpan'}</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }

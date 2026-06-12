@@ -116,12 +116,12 @@ function Dashboard({ dark }) {
         </div>
         <div className="bg-surface2 rounded-2xl p-4 lg:p-5 border border-line">
           <p className="text-inksoft text-xs">Hutang Belum Terbayar</p>
-          <p className="text-xl lg:text-2xl font-bold mt-1" style={{ color: 'var(--down)' }}>Rp {Number(debtTotals.hutangRemaining).toLocaleString('id-ID')}</p>
+          <p className="text-xl lg:text-2xl font-bold mt-1 figure-down">Rp {Number(debtTotals.hutangRemaining).toLocaleString('id-ID')}</p>
           <p className="text-inkfaint text-[11px] mt-1.5">Yang masih harus dibayar</p>
         </div>
         <div className="bg-surface2 rounded-2xl p-4 lg:p-5 border border-line">
           <p className="text-inksoft text-xs">Piutang Belum Tertagih</p>
-          <p className="text-xl lg:text-2xl font-bold mt-1" style={{ color: 'var(--up)' }}>Rp {Number(debtTotals.piutangRemaining).toLocaleString('id-ID')}</p>
+          <p className="text-xl lg:text-2xl font-bold mt-1 figure-up">Rp {Number(debtTotals.piutangRemaining).toLocaleString('id-ID')}</p>
           <p className="text-inkfaint text-[11px] mt-1.5">Yang belum masuk</p>
         </div>
       </div>

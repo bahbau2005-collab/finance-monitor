@@ -406,15 +406,15 @@ function HutangPiutang() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="card">
           <p className="text-sm text-gray-700">Total Hutang</p>
-          <p className="text-2xl font-bold text-down">{formatCurrency(totals.totalHutang)}</p>
+          <p className="text-2xl font-bold figure-down">{formatCurrency(totals.totalHutang)}</p>
         </div>
         <div className="card">
           <p className="text-sm text-gray-700">Total Piutang</p>
-          <p className="text-2xl font-bold text-up">{formatCurrency(totals.totalPiutang)}</p>
+          <p className="text-2xl font-bold figure-up">{formatCurrency(totals.totalPiutang)}</p>
         </div>
         <div className="card">
           <p className="text-sm text-gray-700">Sisa Hutang</p>
-          <p className="text-2xl font-bold text-down">{formatCurrency(totals.hutangRemaining)}</p>
+          <p className="text-2xl font-bold figure-down">{formatCurrency(totals.hutangRemaining)}</p>
         </div>
         <div className="card">
           <p className="text-sm text-gray-700">Sisa Piutang</p>

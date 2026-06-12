@@ -122,7 +122,7 @@ function Cash() {
                 <div className="flex-1">
                   <h4 className="font-semibold text-base lg:text-lg">{acc.name}</h4>
                   <p className="text-xs lg:text-sm text-gray-500">Saldo saat ini</p>
-                  <p className="text-xl lg:text-2xl font-bold text-up">Rp {Number(acc.balance).toLocaleString('id-ID')}</p>
+                  <p className="text-xl lg:text-2xl font-bold figure-up">Rp {Number(acc.balance).toLocaleString('id-ID')}</p>
                   <p className="text-xs text-gray-500">Terakhir diupdate: {acc.lastUpdated ? new Date(acc.lastUpdated).toLocaleString('id-ID') : '-'}</p>
                 </div>
                 <div className="flex flex-col gap-2 w-full sm:w-auto">

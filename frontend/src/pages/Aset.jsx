@@ -621,7 +621,7 @@ function Aset() {
             </div>
             <div className="card text-center">
               <p className="text-gray-600 text-sm">Nilai Bersih (Beli − Jual)</p>
-              <p className="text-2xl font-bold text-up">{formatCurrency(transactions.reduce((s, tx) => s + signedNominal(tx), 0))}</p>
+              <p className="text-2xl font-bold figure-up">{formatCurrency(transactions.reduce((s, tx) => s + signedNominal(tx), 0))}</p>
             </div>
             <div className="card text-center">
               <p className="text-gray-600 text-sm">Total Nilai Beli</p>

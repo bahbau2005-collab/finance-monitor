@@ -92,11 +92,11 @@ function Laporan() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="card">
               <p className="text-sm text-gray-600">Pemasukan ({monthLabel})</p>
-              <p className="text-xl lg:text-2xl font-bold text-up">{formatCurrency(totalIn)}</p>
+              <p className="text-xl lg:text-2xl font-bold figure-up">{formatCurrency(totalIn)}</p>
             </div>
             <div className="card">
               <p className="text-sm text-gray-600">Pengeluaran ({monthLabel})</p>
-              <p className="text-xl lg:text-2xl font-bold text-down">{formatCurrency(totalOut)}</p>
+              <p className="text-xl lg:text-2xl font-bold figure-down">{formatCurrency(totalOut)}</p>
             </div>
             <div className="card">
               <p className="text-sm text-gray-600">Selisih (Tabungan)</p>

@@ -109,16 +109,40 @@ body {
 }
 .btn:active { transform: translateY(0.5px); }
 
-.btn-primary { background: var(--btn-primary-bg); color: var(--btn-primary-text); }
-.btn-primary:hover { filter: brightness(1.05); box-shadow: var(--shadow-sm); }
+/* Tombol utama (emas metallic) */
+.btn-primary {
+  background: linear-gradient(180deg, #c19a55 0%, #9a7636 52%, #785526 100%);
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), var(--shadow-sm);
+}
+.dark .btn-primary {
+  background: linear-gradient(180deg, #e6cd92 0%, #cba968 52%, #a07f44 100%);
+  color: #1c1a15;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), var(--shadow-sm);
+}
+.btn-primary:hover { filter: brightness(1.06); }
 
 .btn-secondary { background: transparent; color: var(--ink-soft); border-color: var(--line-strong); }
 .btn-secondary:hover { background: var(--surface-2); color: var(--ink); }
 
-.btn-danger { background: var(--down); color: #fff; }
-.btn-danger:hover { filter: brightness(1.05); }
+/* Tombol bahaya (merah metallic) */
+.btn-danger {
+  background: linear-gradient(180deg, #e3685a 0%, #d24b3e 50%, #a6362b 100%);
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), var(--shadow-sm);
+}
+.dark .btn-danger {
+  background: linear-gradient(180deg, #f2806e 0%, #e0594a 50%, #b8473a 100%);
+}
+.btn-danger:hover { filter: brightness(1.06); }
 
-.btn-outline { background: transparent; border-color: var(--accent); color: var(--accent-ink); }
+/* Tombol outline (emas lembut metallic) */
+.btn-outline {
+  background: linear-gradient(180deg, var(--accent-soft) 0%, transparent 130%);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
 .btn-outline:hover { background: var(--accent-soft); }
 
 .input-field {
@@ -131,26 +155,26 @@ body {
   transition: border-color .18s ease, box-shadow .18s ease;
 }
 /* Angka penting (hero) — kilau emas metallic, dipakai hemat */
-.figure-gold {
-  background: linear-gradient(170deg, var(--gold-hi) 0%, var(--gold-mid) 50%, var(--gold-lo) 100%);
+.figure-up, .figure-down, .figure-gold {
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
 }
+/* Angka makna — kilau metallic (highlight terang di atas → gelap di bawah) */
 .figure-up {
-  background: linear-gradient(170deg, var(--up-hi) 0%, var(--up-mid) 52%, var(--up-lo) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
+  background: linear-gradient(180deg, #d2f6e4 0%, var(--up-hi) 26%, var(--up-mid) 60%, var(--up-lo) 100%);
 }
 .figure-down {
-  background: linear-gradient(170deg, var(--down-hi) 0%, var(--down-mid) 52%, var(--down-lo) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
+  background: linear-gradient(180deg, #fdded7 0%, var(--down-hi) 26%, var(--down-mid) 60%, var(--down-lo) 100%);
+}
+/* Angka kekayaan utama (hero) — kilau emas paling kuat + sedikit kedalaman */
+.figure-gold {
+  background: linear-gradient(180deg, #fbf1da 0%, #f0dcab 16%, var(--gold-hi) 34%, var(--gold-mid) 64%, var(--gold-lo) 100%);
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.12));
+}
+.dark .figure-gold {
+  filter: drop-shadow(0 1px 6px rgba(203, 169, 104, 0.25));
 }
 
 .input-field::placeholder { color: var(--ink-faint); }

@@ -14,7 +14,7 @@ const ASSET_OPTIONS = [
 function unitInfo(target) {
   if (target.kind === 'cash' || target.kind === 'manual') return { isRp: true, div: 1, unit: '' }
   switch (target.assetType) {
-    case 'gold': return { isRp: false, div: 1000, unit: 'kg' }
+    case 'gold': return { isRp: false, div: 1, unit: 'gram' }
     case 'saham': return { isRp: false, div: 100, unit: 'lot' }
     case 'btc':
     case 'crypto': return { isRp: false, div: 1, unit: 'koin' }
@@ -229,7 +229,7 @@ function Target() {
 
           <div>
             <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-2">Jumlah Target ({currentUnitLabel})</label>
-            <input id="amount" type="number" inputMode="decimal" step="any" name="amount" value={form.amount} onChange={handleChange} className="input-field text-base" placeholder={form.kind === 'asset' && form.assetType === 'gold' ? 'Contoh: 16' : 'Contoh: 100000000'} />
+            <input id="amount" type="number" inputMode="decimal" step="any" name="amount" value={form.amount} onChange={handleChange} className="input-field text-base" placeholder={form.kind === 'asset' && form.assetType === 'gold' ? 'Contoh: 1000 (gram)' : 'Contoh: 100000000'} />
           </div>
 
           {form.kind === 'manual' && (

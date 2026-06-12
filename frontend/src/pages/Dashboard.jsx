@@ -9,7 +9,7 @@ import {
   Legend,
 } from 'recharts'
 
-function Dashboard() {
+function Dashboard({ dark }) {
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -79,7 +79,11 @@ function Dashboard() {
     return qty
   }
 
-  const PIE_COLORS = ['#B08C4A', '#7E7A70', '#5C7C58', '#C9A86A', '#B25C43']
+  // Mode terang: kontras lebih tinggi & hue lebih beda biar gampang dibedain.
+  // Mode gelap: palet lebih lembut (sudah pas).
+  const PIE_COLORS = dark
+    ? ['#B08C4A', '#7E7A70', '#5C7C58', '#C9A86A', '#B25C43']
+    : ['#9A6F1E', '#4E4B45', '#2F7A55', '#7E5BB0', '#B5492B']
 
   return (
     <div className="space-y-6 lg:space-y-8">
@@ -236,7 +240,7 @@ function Dashboard() {
                   {PIE_COLORS.map((color) => <Cell key={color} fill={color} />)}
                 </Pie>
                 <Tooltip formatter={(value) => `Rp ${Number(value).toLocaleString('id-ID')}`} contentStyle={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 10, color: 'var(--ink)' }} />
-                <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: 12 }} />
+                <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: 12 }} formatter={(value) => <span style={{ color: 'var(--ink-soft)' }}>{value}</span>} />
               </PieChart>
             </ResponsiveContainer>
           </div>

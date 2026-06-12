@@ -10,6 +10,7 @@ import ArusKas from './pages/ArusKas'
 import Laporan from './pages/Laporan'
 import Target from './pages/Target'
 import HutangPiutang from './pages/HutangPiutang'
+import Pengaturan from './pages/Pengaturan'
 import Login from './pages/Login'
 import ChangePasswordModal from './components/ChangePasswordModal'
 
@@ -79,6 +80,13 @@ const TargetIcon = () => (
   </svg>
 )
 
+const SettingIcon = () => (
+  <svg {...iconProps}>
+    <circle cx="12" cy="12" r="3" />
+    <path d="M19.4 15a1.6 1.6 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.6 1.6 0 00-2.7.7 1.6 1.6 0 01-3.2 0 1.6 1.6 0 00-2.7-.7l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.6 1.6 0 00-1.5-2.7 1.6 1.6 0 010-3.2 1.6 1.6 0 001.5-2.7l-.1-.1a2 2 0 112.8-2.8l.1.1a1.6 1.6 0 002.7-.7 1.6 1.6 0 013.2 0 1.6 1.6 0 002.7.7l.1-.1a2 2 0 112.8 2.8l-.1.1a1.6 1.6 0 00.7 2.7 1.6 1.6 0 010 3.2 1.6 1.6 0 00-1 .9z" />
+  </svg>
+)
+
 function AppContent({ onLogout, dark, onToggleTheme }) {
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -113,30 +121,6 @@ function AppContent({ onLogout, dark, onToggleTheme }) {
                 <p className="text-inksoft text-[11px] lg:text-sm mt-0.5 truncate">Personal Finance Management</p>
               </div>
             </div>
-            {/* Toggle tema */}
-            <button
-              onClick={onToggleTheme}
-              className="ml-1 p-2 hover:bg-surface2 rounded-lg transition-colors text-inksoft"
-              title={dark ? 'Mode terang' : 'Mode gelap'}
-              aria-label="Toggle tema"
-            >
-              {dark ? (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path strokeLinecap="round" d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19" /></svg>
-              ) : (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z" /></svg>
-              )}
-            </button>
-            {/* Ganti Password */}
-            <button
-              onClick={() => setPwOpen(true)}
-              className="ml-1 px-2.5 py-2 hover:bg-surface2 rounded-lg transition-colors flex items-center gap-2 text-inksoft"
-              title="Ganti Password"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a4 4 0 11-8 0 4 4 0 018 0zM7 11a5 5 0 00-5 5v1h10M16 11l5 5m0-5l-5 5" />
-              </svg>
-              <span className="hidden md:inline text-sm font-medium">Password</span>
-            </button>
             {/* Logout */}
             <button
               onClick={onLogout}
@@ -266,6 +250,19 @@ function AppContent({ onLogout, dark, onToggleTheme }) {
               <TargetIcon />
               <span>Target</span>
             </Link>
+
+            {/* Pengaturan Menu */}
+            <Link
+              to="/pengaturan"
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                location.pathname === '/pengaturan'
+                  ? 'bg-accentsoft text-accentink shadow-sm'
+                  : 'text-inksoft hover:bg-surface2 hover:text-ink'
+              }`}
+            >
+              <SettingIcon />
+              <span>Pengaturan</span>
+            </Link>
           </nav>
         </aside>
 
@@ -273,7 +270,7 @@ function AppContent({ onLogout, dark, onToggleTheme }) {
         <main className="flex-1 overflow-y-auto min-h-0">
           <div className="p-4 lg:p-8 pb-8">
             <Routes>
-              <Route path="/" element={<Dashboard />} />
+              <Route path="/" element={<Dashboard dark={dark} />} />
               <Route path="/aset" element={<Aset />} />
               {/* Backward-compatible routes mapped to Aset */}
               <Route path="/input" element={<Aset />} />
@@ -282,6 +279,7 @@ function AppContent({ onLogout, dark, onToggleTheme }) {
               <Route path="/arus-kas" element={<ArusKas />} />
               <Route path="/laporan-keuangan" element={<Laporan />} />
               <Route path="/target" element={<Target />} />
+              <Route path="/pengaturan" element={<Pengaturan dark={dark} onToggleTheme={onToggleTheme} onOpenPassword={() => setPwOpen(true)} onLogout={onLogout} />} />
               <Route path="/hutang-piutang" element={<HutangPiutang />} />
             </Routes>
           </div>

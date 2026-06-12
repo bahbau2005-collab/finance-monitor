@@ -26,6 +26,9 @@ function ArusKas() {
   const [editing, setEditing] = useState(null)
   const [savingEdit, setSavingEdit] = useState(false)
 
+  // Bulk select
+  const [selectedIds, setSelectedIds] = useState(new Set())
+
   useEffect(() => { fetchFlows() }, [filters])
   useEffect(() => { fetchAccounts() }, [])
 
@@ -92,10 +95,37 @@ function ArusKas() {
     if (!window.confirm('Hapus catatan ini? Saldo rekening terkait akan dikembalikan.')) return
     try {
       await cashFlowService.delete(id)
+      setSelectedIds(prev => { const s = new Set(prev); s.delete(id); return s })
       fetchFlows()
       fetchAccounts()
     } catch {
       alert('Gagal menghapus')
+    }
+  }
+
+  const toggleSelect = (id) => {
+    setSelectedIds(prev => {
+      const s = new Set(prev)
+      s.has(id) ? s.delete(id) : s.add(id)
+      return s
+    })
+  }
+
+  const toggleSelectAll = (e) => {
+    if (e.target.checked) setSelectedIds(new Set(flows.map(f => f._id)))
+    else setSelectedIds(new Set())
+  }
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return
+    if (!window.confirm(`Hapus ${selectedIds.size} catatan? Saldo rekening terkait akan dikembalikan.`)) return
+    try {
+      await Promise.all(Array.from(selectedIds).map(id => cashFlowService.delete(id)))
+      setSelectedIds(new Set())
+      fetchFlows()
+      fetchAccounts()
+    } catch {
+      alert('Gagal menghapus sebagian data')
     }
   }
 
@@ -248,6 +278,16 @@ function ArusKas() {
         </div>
       </div>
 
+      {/* BULK ACTION */}
+      {selectedIds.size > 0 && (
+        <div className="flex justify-end">
+          <button onClick={handleBulkDelete} className="btn bg-red-500 text-white hover:bg-red-600 flex items-center gap-2">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            Hapus {selectedIds.size} Item
+          </button>
+        </div>
+      )}
+
       {/* LIST */}
       <div className="card overflow-x-auto">
         {loading ? (
@@ -258,6 +298,7 @@ function ArusKas() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
+                <th className="px-4 py-3 text-left"><input type="checkbox" className="w-4 h-4" checked={flows.length > 0 && selectedIds.size === flows.length} onChange={toggleSelectAll} /></th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Tanggal</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Tipe</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Kategori</th>
@@ -269,7 +310,8 @@ function ArusKas() {
             </thead>
             <tbody>
               {flows.map(f => (
-                <tr key={f._id} className="border-b border-gray-200 hover:bg-gray-50">
+                <tr key={f._id} className={`border-b border-gray-200 hover:bg-gray-50 ${selectedIds.has(f._id) ? 'bg-blue-50' : ''}`}>
+                  <td className="px-4 py-3 text-left"><input type="checkbox" className="w-4 h-4" checked={selectedIds.has(f._id)} onChange={() => toggleSelect(f._id)} /></td>
                   <td className="px-4 py-3 text-sm">{new Date(f.date).toLocaleDateString('id-ID')}</td>
                   <td className="px-4 py-3 text-sm">
                     <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${f.type === 'income' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>

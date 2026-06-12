@@ -94,7 +94,7 @@ function AppContent({ onLogout }) {
           <div className="flex items-center justify-between">
             <div className="flex-1 min-w-0">
               <h1 className="text-xl lg:text-3xl font-bold text-white tracking-tight whitespace-nowrap">Finance Monitor</h1>
-              <p className="hidden sm:block text-blue-100 text-xs lg:text-sm mt-1">Personal Finance Management System</p>
+              <p className="text-blue-100 text-[11px] lg:text-sm mt-1 truncate">Personal Finance Management System</p>
             </div>
             {/* Tombol Ganti Password */}
             <button

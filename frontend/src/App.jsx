@@ -6,6 +6,7 @@ import { healthCheck, authService, getToken, clearToken } from './services/api'
 import Dashboard from './pages/Dashboard'
 import Aset from './pages/Aset'
 import Cash from './pages/Cash'
+import ArusKas from './pages/ArusKas'
 import HutangPiutang from './pages/HutangPiutang'
 import Login from './pages/Login'
 import ChangePasswordModal from './components/ChangePasswordModal'
@@ -43,6 +44,13 @@ const CashIcon = () => (
     <rect x="2.5" y="6" width="19" height="12" rx="2" />
     <circle cx="12" cy="12" r="2.5" />
     <path d="M6 9.5v.01M18 14.5v.01" />
+  </svg>
+)
+
+const ArusKasIcon = () => (
+  <svg {...iconProps}>
+    <path d="M7 17V9m0 0L4 12m3-3l3 3" />
+    <path d="M17 7v8m0 0l3-3m-3 3l-3-3" />
   </svg>
 )
 
@@ -162,6 +170,19 @@ function AppContent({ onLogout }) {
               <span>Cash</span>
             </Link>
 
+            {/* Arus Kas Menu */}
+            <Link
+              to="/arus-kas"
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                location.pathname === '/arus-kas'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
+                  : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
+              }`}
+            >
+              <ArusKasIcon />
+              <span>Arus Kas</span>
+            </Link>
+
             {/* Hutang & Piutang Menu */}
             <Link
               to="/hutang-piutang"
@@ -186,6 +207,7 @@ function AppContent({ onLogout }) {
             <Route path="/input" element={<Aset />} />
             <Route path="/laporan" element={<Aset />} />
             <Route path="/cash" element={<Cash />} />
+            <Route path="/arus-kas" element={<ArusKas />} />
             <Route path="/hutang-piutang" element={<HutangPiutang />} />
           </Routes>
         </main>

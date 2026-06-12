@@ -131,6 +131,17 @@ export const cashService = {
 };
 
 // ============================================
+// CASH FLOW (PEMASUKAN & PENGELUARAN) ENDPOINTS
+// ============================================
+
+export const cashFlowService = {
+  create: (data) => api.post('/cashflow', data),
+  getAll: (filters = {}) => api.get('/cashflow', { params: filters }),
+  update: (id, data) => api.put(`/cashflow/${id}`, data),
+  delete: (id) => api.delete(`/cashflow/${id}`),
+};
+
+// ============================================
 // DEBT & RECEIVABLE ENDPOINTS
 // ============================================
 

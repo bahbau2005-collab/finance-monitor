@@ -8,6 +8,7 @@ const authRoutes = require('./routes/authRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
 const savingGoalRoutes = require('./routes/savingGoalRoutes');
 const cashRoutes = require('./routes/cashRoutes');
+const cashFlowRoutes = require('./routes/cashFlowRoutes');
 const debtRoutes = require('./routes/debtRoutes');
 const { requireAuth } = require('./middleware/auth');
 
@@ -79,6 +80,9 @@ app.use('/api/goals', requireAuth, savingGoalRoutes);
 
 // Cash account routes
 app.use('/api/cash', requireAuth, cashRoutes);
+
+// Cash flow (pemasukan & pengeluaran) routes
+app.use('/api/cashflow', requireAuth, cashFlowRoutes);
 
 // Debt & Receivable routes
 app.use('/api/debts', requireAuth, debtRoutes);

@@ -344,13 +344,13 @@ function HutangPiutang() {
   return (
     <div className="space-y-6 lg:space-y-8">
       <div>
-        <h1 className="text-2xl lg:text-4xl font-bold text-gray-900 mb-2">Hutang & Piutang</h1>
+        <h1 className="text-2xl lg:text-4xl font-bold text-ink mb-2">Hutang & Piutang</h1>
         <p className="text-xs lg:text-sm text-gray-600">Catat dan kelola hutang/piutang Anda</p>
       </div>
 
       {/* Form */}
       <div className="card">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">{editingId ? 'Edit Data' : 'Tambah Data'}</h3>
+        <h3 className="text-lg font-semibold text-ink mb-4">{editingId ? 'Edit Data' : 'Tambah Data'}</h3>
 
         {formMsg && (
           <div className={`mb-4 p-3 rounded-lg border flex items-start gap-2 ${formMsg.type === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
@@ -418,7 +418,7 @@ function HutangPiutang() {
         </div>
         <div className="card">
           <p className="text-sm text-gray-700">Sisa Piutang</p>
-          <p className="text-2xl font-bold text-blue-700">{formatCurrency(totals.piutangRemaining)}</p>
+          <p className="text-2xl font-bold text-ink">{formatCurrency(totals.piutangRemaining)}</p>
         </div>
       </div>
 
@@ -524,7 +524,7 @@ function HutangPiutang() {
                           type="button"
                           onClick={() => toggleReason(d._id)}
                           title={expandedReason.has(d._id) ? 'Klik untuk ringkas' : d.reason}
-                          className={`text-left w-full hover:text-blue-600 ${expandedReason.has(d._id) ? 'whitespace-pre-wrap break-words' : 'truncate'}`}
+                          className={`text-left w-full hover:text-accentink ${expandedReason.has(d._id) ? 'whitespace-pre-wrap break-words' : 'truncate'}`}
                         >
                           {d.reason}
                         </button>
@@ -536,25 +536,25 @@ function HutangPiutang() {
                       </button>
                     </td>
                     <td className="px-4 py-3 text-sm text-center space-x-2">
-                      <button onClick={() => setExpandedPaymentId(isExpanded ? null : d._id)} className="text-indigo-600 hover:text-indigo-800 font-medium text-xs" title="Lihat riwayat pembayaran">📋</button>
-                      <button onClick={() => startEdit(d)} className="text-blue-600 hover:text-blue-800 font-medium text-xs">Edit</button>
+                      <button onClick={() => setExpandedPaymentId(isExpanded ? null : d._id)} className="text-accentink hover:opacity-70 font-medium text-xs" title="Lihat riwayat pembayaran">📋</button>
+                      <button onClick={() => startEdit(d)} className="text-accentink hover:opacity-70 font-medium text-xs">Edit</button>
                       <button onClick={() => handleDelete(d._id)} className="text-red-500 hover:text-red-700 font-medium text-xs">Hapus</button>
-                      <button onClick={() => openPayment(d)} className="text-purple-600 hover:text-purple-800 font-medium text-xs">Bayar</button>
+                      <button onClick={() => openPayment(d)} className="text-accentink hover:opacity-70 font-medium text-xs">Bayar</button>
                     </td>
                   </tr>
                   {isExpanded && (
-                    <tr className="border-b border-gray-200 bg-blue-50">
+                    <tr className="border-b border-line bg-surface2">
                       <td colSpan="10" className="px-6 py-4">
                         {d.payments && d.payments.length > 0 ? (
                           <div className="space-y-3">
-                            <h4 className="font-semibold text-gray-900 text-sm">Riwayat Pembayaran ({d.payments.length})</h4>
+                            <h4 className="font-semibold text-ink text-sm">Riwayat Pembayaran ({d.payments.length})</h4>
                             <div className="space-y-2">
                               {d.payments.map((pmt, idx) => (
                                 <div key={idx} className="bg-white border border-gray-200 rounded p-3">
                                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
                                     <div>
                                       <p className="text-gray-600 text-xs font-medium">Tanggal</p>
-                                      <p className="font-medium text-gray-900">{new Date(pmt.date).toLocaleDateString('id-ID')}</p>
+                                      <p className="font-medium text-ink">{new Date(pmt.date).toLocaleDateString('id-ID')}</p>
                                     </div>
                                     <div>
                                       <p className="text-gray-600 text-xs font-medium">Jumlah Bayar</p>
@@ -562,10 +562,10 @@ function HutangPiutang() {
                                     </div>
                                     <div>
                                       <p className="text-gray-600 text-xs font-medium">Catatan</p>
-                                      <p className="font-medium text-gray-900">{pmt.note || '-'}</p>
+                                      <p className="font-medium text-ink">{pmt.note || '-'}</p>
                                     </div>
                                     <div className="flex flex-col gap-2">
-                                      <button type="button" className="text-indigo-600 hover:text-indigo-800 text-xs font-semibold" onClick={() => openEditPayment(d._id, idx, pmt)}>
+                                      <button type="button" className="text-accentink hover:opacity-70 text-xs font-semibold" onClick={() => openEditPayment(d._id, idx, pmt)}>
                                         Edit
                                       </button>
                                       <button type="button" className="text-red-600 hover:text-red-800 text-xs font-semibold" onClick={() => deletePayment(d._id, idx)}>
@@ -620,7 +620,7 @@ function HutangPiutang() {
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Jumlah Bayar</label>
                   <input type="number" inputMode="numeric" value={paymentForm.amount} onChange={e => setPaymentForm(prev => ({ ...prev, amount: e.target.value }))} className="input-field text-base" placeholder="Contoh: 100000" autoFocus />
                   {!paymentEdit && sisa > 0 && (
-                    <button type="button" onClick={() => setPaymentForm(prev => ({ ...prev, amount: String(sisa) }))} className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-800">
+                    <button type="button" onClick={() => setPaymentForm(prev => ({ ...prev, amount: String(sisa) }))} className="mt-2 text-xs font-medium text-accentink hover:opacity-70">
                       Isi penuh — lunaskan {formatCurrency(sisa)}
                     </button>
                   )}

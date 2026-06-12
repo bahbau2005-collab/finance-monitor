@@ -83,7 +83,7 @@ function Cash() {
     <div>
       {/* JUDUL MENU */}
       <div className="mb-6">
-        <h1 className="text-2xl lg:text-4xl font-bold text-gray-900 mb-2">Cash</h1>
+        <h1 className="text-2xl lg:text-4xl font-bold text-ink mb-2">Cash</h1>
         <p className="text-xs lg:text-sm text-gray-600">Kelola rekening tunai Anda (bank, dompet, dll)</p>
       </div>
 

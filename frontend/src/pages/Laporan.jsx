@@ -75,7 +75,7 @@ function Laporan() {
     <div className="space-y-6 lg:space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl lg:text-4xl font-bold text-gray-900 mb-2">Laporan</h1>
+          <h1 className="text-2xl lg:text-4xl font-bold text-ink mb-2">Laporan</h1>
           <p className="text-xs lg:text-sm text-gray-600">Ringkasan arus kas: pemasukan vs pengeluaran per bulan</p>
         </div>
         <div>
@@ -100,13 +100,13 @@ function Laporan() {
             </div>
             <div className="card">
               <p className="text-sm text-gray-600">Selisih (Tabungan)</p>
-              <p className={`text-xl lg:text-2xl font-bold ${net >= 0 ? 'text-blue-600' : 'text-red-600'}`}>{net < 0 ? '− ' : ''}{formatCurrency(Math.abs(net))}</p>
+              <p className={`text-xl lg:text-2xl font-bold ${net >= 0 ? 'text-ink' : 'text-red-600'}`}>{net < 0 ? '− ' : ''}{formatCurrency(Math.abs(net))}</p>
             </div>
           </div>
 
           {/* TREND 6 BULAN */}
           <div className="card">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Tren 6 Bulan Terakhir</h3>
+            <h3 className="text-lg font-semibold text-ink mb-4">Tren 6 Bulan Terakhir</h3>
             <div style={{ width: '100%', height: 300 }}>
               <ResponsiveContainer>
                 <BarChart data={trend} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
@@ -124,7 +124,7 @@ function Laporan() {
 
           {/* BREAKDOWN PENGELUARAN */}
           <div className="card">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Pengeluaran per Kategori — {monthLabel}</h3>
+            <h3 className="text-lg font-semibold text-ink mb-4">Pengeluaran per Kategori — {monthLabel}</h3>
             {expenseByCat.length === 0 ? (
               <p className="text-gray-500 text-center py-8">Belum ada pengeluaran di bulan ini</p>
             ) : (
@@ -148,7 +148,7 @@ function Laporan() {
                           <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: PIE_COLORS[idx % PIE_COLORS.length] }}></span>
                           {c.name}
                         </span>
-                        <span className="font-medium text-gray-900">{formatCurrency(c.value)} <span className="text-gray-400">({pct}%)</span></span>
+                        <span className="font-medium text-ink">{formatCurrency(c.value)} <span className="text-gray-400">({pct}%)</span></span>
                       </div>
                     )
                   })}

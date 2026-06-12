@@ -179,7 +179,7 @@ function ArusKas() {
   return (
     <div className="space-y-6 lg:space-y-8">
       <div>
-        <h1 className="text-2xl lg:text-4xl font-bold text-gray-900 mb-2">Arus Kas</h1>
+        <h1 className="text-2xl lg:text-4xl font-bold text-ink mb-2">Arus Kas</h1>
         <p className="text-xs lg:text-sm text-gray-600">Catat pemasukan & pengeluaran harian (saldo Cash ikut diperbarui otomatis)</p>
       </div>
 
@@ -195,22 +195,22 @@ function ArusKas() {
         </div>
         <div className="card">
           <p className="text-sm text-gray-600">Selisih</p>
-          <p className={`text-xl lg:text-2xl font-bold ${net >= 0 ? 'text-blue-600' : 'text-red-600'}`}>{net < 0 ? '− ' : ''}{formatCurrency(Math.abs(net))}</p>
+          <p className={`text-xl lg:text-2xl font-bold ${net >= 0 ? 'text-ink' : 'text-red-600'}`}>{net < 0 ? '− ' : ''}{formatCurrency(Math.abs(net))}</p>
         </div>
       </div>
 
       {/* INPUT FORM */}
       <div className="card">
-        <h3 className="text-base lg:text-lg font-semibold text-gray-900 mb-4">Catat Transaksi</h3>
+        <h3 className="text-base lg:text-lg font-semibold text-ink mb-4">Catat Transaksi</h3>
 
         {/* Toggle income/expense */}
         <div className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1 mb-5">
           <button type="button" onClick={() => handleChange({ target: { name: 'type', value: 'income' } })}
-            className={`px-5 py-2 rounded-md text-sm font-medium transition-all ${form.type === 'income' ? 'bg-green-600 text-white shadow' : 'text-gray-600 hover:text-gray-900'}`}>
+            className={`px-5 py-2 rounded-md text-sm font-medium transition-all ${form.type === 'income' ? 'bg-green-600 text-white shadow' : 'text-gray-600 hover:text-ink'}`}>
             Pemasukan
           </button>
           <button type="button" onClick={() => handleChange({ target: { name: 'type', value: 'expense' } })}
-            className={`px-5 py-2 rounded-md text-sm font-medium transition-all ${form.type === 'expense' ? 'bg-red-600 text-white shadow' : 'text-gray-600 hover:text-gray-900'}`}>
+            className={`px-5 py-2 rounded-md text-sm font-medium transition-all ${form.type === 'expense' ? 'bg-red-600 text-white shadow' : 'text-gray-600 hover:text-ink'}`}>
             Pengeluaran
           </button>
         </div>
@@ -310,7 +310,7 @@ function ArusKas() {
             </thead>
             <tbody>
               {flows.map(f => (
-                <tr key={f._id} className={`border-b border-gray-200 hover:bg-gray-50 ${selectedIds.has(f._id) ? 'bg-blue-50' : ''}`}>
+                <tr key={f._id} className={`border-b border-gray-200 hover:bg-gray-50 ${selectedIds.has(f._id) ? 'bg-accentsoft' : ''}`}>
                   <td className="px-4 py-3 text-left"><input type="checkbox" className="w-4 h-4" checked={selectedIds.has(f._id)} onChange={() => toggleSelect(f._id)} /></td>
                   <td className="px-4 py-3 text-sm">{new Date(f.date).toLocaleDateString('id-ID')}</td>
                   <td className="px-4 py-3 text-sm">
@@ -323,7 +323,7 @@ function ArusKas() {
                   <td className={`px-4 py-3 text-sm text-right font-semibold ${f.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>{f.type === 'income' ? '+ ' : '− '}{formatCurrency(f.amount)}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 max-w-xs truncate" title={f.note || ''}>{f.note || '-'}</td>
                   <td className="px-4 py-3 text-center space-x-2 whitespace-nowrap">
-                    <button onClick={() => openEdit(f)} className="text-blue-600 hover:text-blue-800 font-medium text-sm">Edit</button>
+                    <button onClick={() => openEdit(f)} className="text-accentink hover:opacity-70 font-medium text-sm">Edit</button>
                     <button onClick={() => handleDelete(f._id)} className="text-red-500 hover:text-red-700 font-medium text-sm">Hapus</button>
                   </td>
                 </tr>

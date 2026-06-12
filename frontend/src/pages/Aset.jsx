@@ -349,27 +349,27 @@ function Aset() {
   return (
     <div className="space-y-6 lg:space-y-8">
       <div>
-        <h1 className="text-2xl lg:text-4xl font-bold text-gray-900 mb-2">Aset</h1>
+        <h1 className="text-2xl lg:text-4xl font-bold text-ink mb-2">Aset</h1>
         <p className="text-xs lg:text-sm text-gray-600">Catat & pantau investasi Anda (BTC, crypto, emas, saham, dan barang berharga)</p>
       </div>
 
       {/* INPUT SECTION */}
       <div className="card">
-        <h3 className="text-base lg:text-lg font-semibold text-gray-900 mb-4">Tambah Transaksi Aset</h3>
+        <h3 className="text-base lg:text-lg font-semibold text-ink mb-4">Tambah Transaksi Aset</h3>
 
         {/* Toggle Beli / Jual */}
         <div className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1 mb-5">
           <button
             type="button"
             onClick={() => setFormData(prev => ({ ...prev, txType: 'buy', cashAccountId: '' }))}
-            className={`px-5 py-2 rounded-md text-sm font-medium transition-all ${formData.txType === 'buy' ? 'bg-green-600 text-white shadow' : 'text-gray-600 hover:text-gray-900'}`}
+            className={`px-5 py-2 rounded-md text-sm font-medium transition-all ${formData.txType === 'buy' ? 'bg-green-600 text-white shadow' : 'text-gray-600 hover:text-ink'}`}
           >
             Beli / Tambah
           </button>
           <button
             type="button"
             onClick={() => setFormData(prev => ({ ...prev, txType: 'sell' }))}
-            className={`px-5 py-2 rounded-md text-sm font-medium transition-all ${formData.txType === 'sell' ? 'bg-red-600 text-white shadow' : 'text-gray-600 hover:text-gray-900'}`}
+            className={`px-5 py-2 rounded-md text-sm font-medium transition-all ${formData.txType === 'sell' ? 'bg-red-600 text-white shadow' : 'text-gray-600 hover:text-ink'}`}
           >
             Jual / Kurangi
           </button>
@@ -456,7 +456,7 @@ function Aset() {
           <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-          <h3 className="text-lg font-semibold text-gray-900">Filter & Cari</h3>
+          <h3 className="text-lg font-semibold text-ink">Filter & Cari</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
@@ -515,10 +515,10 @@ function Aset() {
             </thead>
             <tbody>
               {transactions.map((tx) => (
-                <tr key={tx._id} className={`border-b border-gray-200 hover:bg-gray-50 ${selectedIds.has(tx._id) ? 'bg-blue-50' : ''}`}>
+                <tr key={tx._id} className={`border-b border-gray-200 hover:bg-gray-50 ${selectedIds.has(tx._id) ? 'bg-accentsoft' : ''}`}>
                   <td className="px-4 py-3 text-left"><input type="checkbox" className="w-4 h-4" checked={selectedIds.has(tx._id)} onChange={() => handleSelectRow(tx._id)} /></td>
                   <td className="px-4 py-3 text-sm">{new Date(tx.transactionDate).toLocaleDateString('id-ID')}</td>
-                  <td className="px-4 py-3 text-sm"><span className="inline-block px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium" style={{textTransform: tx.assetType === 'btc' ? 'uppercase' : 'capitalize'}}>{tx.assetType === 'btc' ? 'BTC' : tx.assetType}</span></td>
+                  <td className="px-4 py-3 text-sm"><span className="inline-block px-2 py-1 bg-accentsoft text-accentink rounded text-xs font-medium" style={{textTransform: tx.assetType === 'btc' ? 'uppercase' : 'capitalize'}}>{tx.assetType === 'btc' ? 'BTC' : tx.assetType}</span></td>
                   <td className="px-4 py-3 text-sm font-medium">
                     <span className="flex items-center gap-2">
                       {tx.assetName}
@@ -535,14 +535,14 @@ function Aset() {
                         type="button"
                         onClick={() => toggleDesc(tx._id)}
                         title={expandedDesc.has(tx._id) ? 'Klik untuk ringkas' : tx.description}
-                        className={`text-left w-full hover:text-blue-600 ${expandedDesc.has(tx._id) ? 'whitespace-pre-wrap break-words' : 'truncate'}`}
+                        className={`text-left w-full hover:text-accentink ${expandedDesc.has(tx._id) ? 'whitespace-pre-wrap break-words' : 'truncate'}`}
                       >
                         {tx.description}
                       </button>
                     ) : '-'}
                   </td>
                   <td className="px-4 py-3 text-center space-x-2">
-                    <button onClick={() => openEdit(tx)} className="text-blue-600 hover:text-blue-800 font-medium text-sm">Edit</button>
+                    <button onClick={() => openEdit(tx)} className="text-accentink hover:opacity-70 font-medium text-sm">Edit</button>
                     <button onClick={() => handleDelete(tx._id)} className="text-red-500 hover:text-red-700 font-medium text-sm">Hapus</button>
                   </td>
                 </tr>
@@ -617,7 +617,7 @@ function Aset() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
             <div className="card text-center">
               <p className="text-gray-600 text-sm">Total Transaksi</p>
-              <p className="text-2xl font-bold text-blue-600">{transactions.length}</p>
+              <p className="text-2xl font-bold text-ink">{transactions.length}</p>
             </div>
             <div className="card text-center">
               <p className="text-gray-600 text-sm">Nilai Bersih (Beli − Jual)</p>
@@ -625,18 +625,18 @@ function Aset() {
             </div>
             <div className="card text-center">
               <p className="text-gray-600 text-sm">Total Nilai Beli</p>
-              <p className="text-2xl font-bold text-purple-600">{formatCurrency(transactions.filter(tx => tx.txType !== 'sell').reduce((s, tx) => s + (Number(tx.nominal) || 0), 0))}</p>
+              <p className="text-2xl font-bold text-ink">{formatCurrency(transactions.filter(tx => tx.txType !== 'sell').reduce((s, tx) => s + (Number(tx.nominal) || 0), 0))}</p>
             </div>
           </div>
 
           {/* Total Quantity by Asset Type */}
           <div className="card">
-            <h4 className="text-lg font-semibold text-gray-900 mb-4">Total Jumlah Aset</h4>
+            <h4 className="text-lg font-semibold text-ink mb-4">Total Jumlah Aset</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[{ label: 'BITCOIN (BTC)', qty: btcQty, unit: 'BTC', format: (q) => q.toFixed(8) }, { label: 'Emas (gram)', qty: goldQty, unit: 'g', format: (q) => q.toFixed(4) }, { label: 'Saham', qty: sahamQty, unit: 'lot', format: (q) => `${(q / LOT_SIZE).toLocaleString('id-ID')} lot (${q.toLocaleString('id-ID')} lembar)`, raw: true }, { label: 'Barang Berharga', qty: barangQty, unit: 'unit', format: (q) => q.toLocaleString('id-ID') }].map(item => (
-                <div key={item.label} className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
+                <div key={item.label} className="bg-surface2 p-4 rounded-lg border border-line">
                   <p className="text-gray-700 font-medium text-sm mb-1">{item.label}</p>
-                  <p className="text-2xl font-bold text-blue-600">{item.qty > 0 ? (item.raw ? item.format(item.qty) : `${item.format(item.qty)} ${item.unit}`) : '-'}</p>
+                  <p className="text-2xl font-bold text-ink">{item.qty > 0 ? (item.raw ? item.format(item.qty) : `${item.format(item.qty)} ${item.unit}`) : '-'}</p>
                 </div>
               ))}
             </div>

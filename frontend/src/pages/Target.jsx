@@ -183,19 +183,19 @@ function Target() {
   return (
     <div className="space-y-6 lg:space-y-8">
       <div>
-        <h1 className="text-2xl lg:text-4xl font-bold text-gray-900 mb-2">Target</h1>
+        <h1 className="text-2xl lg:text-4xl font-bold text-ink mb-2">Target</h1>
         <p className="text-xs lg:text-sm text-gray-600">Target akumulasi kekayaan (emas, BTC, saham, cash, dll) dengan progress otomatis</p>
       </div>
 
       {/* FORM */}
       <div className="card">
-        <h3 className="text-base lg:text-lg font-semibold text-gray-900 mb-4">Buat Target Baru</h3>
+        <h3 className="text-base lg:text-lg font-semibold text-ink mb-4">Buat Target Baru</h3>
 
         {/* Toggle kind */}
         <div className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1 mb-5">
           {[{ k: 'asset', l: 'Aset' }, { k: 'cash', l: 'Cash' }, { k: 'manual', l: 'Manual' }].map(o => (
             <button key={o.k} type="button" onClick={() => handleChange({ target: { name: 'kind', value: o.k } })}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${form.kind === o.k ? 'bg-blue-600 text-white shadow' : 'text-gray-600 hover:text-gray-900'}`}>
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${form.kind === o.k ? 'bg-ink text-bg shadow' : 'text-inksoft hover:text-ink'}`}>
               {o.l}
             </button>
           ))}
@@ -268,11 +268,11 @@ function Target() {
               <div key={t._id} className="card">
                 <div className="flex items-start justify-between gap-3 mb-1">
                   <div>
-                    <h4 className="font-semibold text-gray-900">{t.name}</h4>
+                    <h4 className="font-semibold text-ink">{t.name}</h4>
                     <p className="text-xs text-gray-500">{kindLabel(t)}{t.note ? ` · ${t.note}` : ''}</p>
                   </div>
                   <div className="flex gap-2 text-sm shrink-0">
-                    <button onClick={() => openEdit(t)} className="text-blue-600 hover:text-blue-800 font-medium">Edit</button>
+                    <button onClick={() => openEdit(t)} className="text-accentink hover:opacity-70 font-medium">Edit</button>
                     <button onClick={() => handleDelete(t._id)} className="text-red-500 hover:text-red-700 font-medium">Hapus</button>
                   </div>
                 </div>
@@ -284,10 +284,10 @@ function Target() {
                     <span className="text-gray-500">dari {fmtBase(t, t.targetAmount)}</span>
                   </div>
                   <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
-                    <div className={`h-full rounded-full transition-all ${done ? 'bg-green-500' : 'bg-blue-600'}`} style={{ width: `${percent}%` }}></div>
+                    <div className={`h-full rounded-full transition-all ${done ? 'bg-green-500' : 'bg-accentink'}`} style={{ width: `${percent}%` }}></div>
                   </div>
                   <div className="flex justify-between text-xs mt-1.5">
-                    <span className={`font-semibold ${done ? 'text-green-600' : 'text-blue-600'}`}>{percent.toFixed(1)}%</span>
+                    <span className={`font-semibold ${done ? 'text-green-600' : 'text-accentink'}`}>{percent.toFixed(1)}%</span>
                     {done ? (
                       <span className="text-green-600 font-medium">🎉 Tercapai!</span>
                     ) : (

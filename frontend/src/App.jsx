@@ -80,15 +80,21 @@ function AppContent({ onLogout }) {
     setSidebarOpen(false)
   }, [location])
 
+  // Kunci scroll background saat sidebar (drawer) terbuka di HP
+  useEffect(() => {
+    document.body.style.overflow = sidebarOpen ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [sidebarOpen])
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* HEADER */}
       <header className="bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg sticky top-0 z-50">
         <div className="px-4 lg:px-6 py-4 lg:py-5">
           <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <h1 className="text-2xl lg:text-3xl font-bold text-white tracking-tight">Finance Monitor</h1>
-              <p className="text-blue-100 text-xs lg:text-sm mt-1">Personal Finance Management System</p>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl lg:text-3xl font-bold text-white tracking-tight whitespace-nowrap">Finance Monitor</h1>
+              <p className="hidden sm:block text-blue-100 text-xs lg:text-sm mt-1">Personal Finance Management System</p>
             </div>
             {/* Tombol Ganti Password */}
             <button
@@ -136,7 +142,7 @@ function AppContent({ onLogout }) {
         )}
 
         {/* SIDEBAR */}
-        <aside className={`fixed lg:sticky left-0 top-20 w-64 bg-white/80 backdrop-blur-md shadow-xl h-[calc(100vh-80px)] overflow-y-auto border-r border-blue-100 transition-transform duration-300 z-30 flex-shrink-0 pb-2 ${
+        <aside className={`fixed lg:sticky left-0 top-20 w-64 bg-white/95 lg:bg-white/80 backdrop-blur-md shadow-xl h-[calc(100dvh-5rem)] overflow-y-auto overscroll-contain border-r border-blue-100 transition-transform duration-300 z-30 flex-shrink-0 pb-4 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}>
           <nav className="p-6 space-y-2">

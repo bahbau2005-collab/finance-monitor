@@ -350,7 +350,7 @@ function Aset() {
     <div className="space-y-6 lg:space-y-8">
       <div>
         <h1 className="text-2xl lg:text-4xl font-bold text-gray-900 mb-2">Aset</h1>
-        <p className="text-xs lg:text-sm text-gray-600">Input di atas, Laporan di bawah</p>
+        <p className="text-xs lg:text-sm text-gray-600">Catat & pantau investasi Anda — BTC, crypto, emas, saham, dan barang berharga</p>
       </div>
 
       {/* INPUT SECTION */}

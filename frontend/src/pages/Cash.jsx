@@ -81,6 +81,12 @@ function Cash() {
 
   return (
     <div>
+      {/* JUDUL MENU */}
+      <div className="mb-6">
+        <h1 className="text-2xl lg:text-4xl font-bold text-gray-900 mb-2">Cash</h1>
+        <p className="text-xs lg:text-sm text-gray-600">Kelola rekening tunai Anda (bank, dompet, dll)</p>
+      </div>
+
       {/* TOTAL CASH */}
       <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
         <div className="card">
@@ -90,10 +96,6 @@ function Cash() {
           </h2>
           <p className="text-gray-500 text-xs mt-2">Jumlah saldo pada semua rekening cash</p>
         </div>
-      </div>
-      <div className="mb-6">
-        <h1 className="text-2xl lg:text-3xl font-bold">Cash Accounts</h1>
-        <p className="text-xs lg:text-sm text-gray-600">Kelola rekening tunai Anda (bank, dompet, dll)</p>
       </div>
 
       <div className="card mb-6">

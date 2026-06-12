@@ -96,9 +96,9 @@ function AppContent({ onLogout }) {
   }, [sidebarOpen])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="h-screen flex flex-col overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* HEADER */}
-      <header className="bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg sticky top-0 z-50">
+      <header className="bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg z-50 flex-shrink-0">
         <div className="px-4 lg:px-6 py-4 lg:py-5">
           <div className="flex items-center justify-between">
             <div className="flex-1 min-w-0">
@@ -141,7 +141,7 @@ function AppContent({ onLogout }) {
         </div>
       </header>
 
-      <div className="flex h-[calc(100vh-80px)] overflow-hidden">
+      <div className="flex flex-1 min-h-0 overflow-hidden relative">
         {/* MOBILE OVERLAY */}
         {sidebarOpen && (
           <div
@@ -151,7 +151,7 @@ function AppContent({ onLogout }) {
         )}
 
         {/* SIDEBAR */}
-        <aside className={`fixed lg:sticky left-0 top-20 w-64 bg-white/95 lg:bg-white/80 backdrop-blur-md shadow-xl h-[calc(100dvh-5rem)] overflow-y-auto overscroll-contain border-r border-blue-100 transition-transform duration-300 z-30 flex-shrink-0 pb-4 ${
+        <aside className={`fixed lg:static inset-y-0 lg:inset-auto left-0 z-30 lg:z-auto w-64 bg-white/95 lg:bg-white/80 backdrop-blur-md shadow-xl lg:shadow-none h-full overflow-y-auto overscroll-contain border-r border-blue-100 transition-transform duration-300 flex-shrink-0 pt-20 lg:pt-0 pb-4 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}>
           <nav className="p-6 space-y-2">
@@ -248,29 +248,31 @@ function AppContent({ onLogout }) {
           </nav>
         </aside>
 
-        {/* MAIN CONTENT */}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-8 pb-12">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/aset" element={<Aset />} />
-            {/* Backward-compatible routes mapped to Aset */}
-            <Route path="/input" element={<Aset />} />
-            <Route path="/laporan" element={<Aset />} />
-            <Route path="/cash" element={<Cash />} />
-            <Route path="/arus-kas" element={<ArusKas />} />
-            <Route path="/laporan-keuangan" element={<Laporan />} />
-            <Route path="/target" element={<Target />} />
-            <Route path="/hutang-piutang" element={<HutangPiutang />} />
-          </Routes>
+        {/* MAIN CONTENT — scroll sendiri */}
+        <main className="flex-1 overflow-y-auto min-h-0">
+          <div className="p-4 lg:p-8 pb-8">
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/aset" element={<Aset />} />
+              {/* Backward-compatible routes mapped to Aset */}
+              <Route path="/input" element={<Aset />} />
+              <Route path="/laporan" element={<Aset />} />
+              <Route path="/cash" element={<Cash />} />
+              <Route path="/arus-kas" element={<ArusKas />} />
+              <Route path="/laporan-keuangan" element={<Laporan />} />
+              <Route path="/target" element={<Target />} />
+              <Route path="/hutang-piutang" element={<HutangPiutang />} />
+            </Routes>
+          </div>
+
+          {/* FOOTER (ikut scroll konten) */}
+          <footer className="bg-white/80 backdrop-blur-md border-t border-blue-100">
+            <div className="px-4 lg:px-6 py-6 lg:py-8 text-center text-gray-600 text-xs lg:text-sm">
+              <p>© 2025 Finance Monitor. Elegant Financial Management.</p>
+            </div>
+          </footer>
         </main>
       </div>
-
-      {/* FOOTER */}
-      <footer className="bg-white/80 backdrop-blur-md border-t border-blue-100">
-        <div className="px-4 lg:px-6 py-6 lg:py-8 text-center text-gray-600 text-xs lg:text-sm">
-          <p>© 2025 Finance Monitor. Elegant Financial Management.</p>
-        </div>
-      </footer>
 
       {/* Modal Ganti Password */}
       <ChangePasswordModal open={pwOpen} onClose={() => setPwOpen(false)} />

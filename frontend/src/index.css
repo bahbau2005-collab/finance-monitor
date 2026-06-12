@@ -155,22 +155,22 @@ body {
   transition: border-color .18s ease, box-shadow .18s ease;
 }
 /* Angka penting (hero) — kilau emas metallic, dipakai hemat */
+/* Angka makna — kilau metallic. Pakai background-image agar background-clip:text tidak ter-reset. */
 .figure-up, .figure-down, .figure-gold {
-  -webkit-background-clip: text;
-  background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
 }
-/* Angka makna — kilau metallic (highlight terang di atas → gelap di bawah) */
 .figure-up {
-  background: linear-gradient(180deg, #d2f6e4 0%, var(--up-hi) 26%, var(--up-mid) 60%, var(--up-lo) 100%);
+  background-image: linear-gradient(180deg, #d2f6e4 0%, var(--up-hi) 26%, var(--up-mid) 60%, var(--up-lo) 100%);
 }
 .figure-down {
-  background: linear-gradient(180deg, #fdded7 0%, var(--down-hi) 26%, var(--down-mid) 60%, var(--down-lo) 100%);
+  background-image: linear-gradient(180deg, #fdded7 0%, var(--down-hi) 26%, var(--down-mid) 60%, var(--down-lo) 100%);
 }
 /* Angka kekayaan utama (hero) — kilau emas paling kuat + sedikit kedalaman */
 .figure-gold {
-  background: linear-gradient(180deg, #fbf1da 0%, #f0dcab 16%, var(--gold-hi) 34%, var(--gold-mid) 64%, var(--gold-lo) 100%);
+  background-image: linear-gradient(180deg, #fbf1da 0%, #f0dcab 16%, var(--gold-hi) 34%, var(--gold-mid) 64%, var(--gold-lo) 100%);
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.12));
 }
 .dark .figure-gold {

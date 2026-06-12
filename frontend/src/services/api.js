@@ -142,6 +142,17 @@ export const cashFlowService = {
 };
 
 // ============================================
+// TARGET ENDPOINTS
+// ============================================
+
+export const targetService = {
+  create: (data) => api.post('/targets', data),
+  getAll: () => api.get('/targets'),
+  update: (id, data) => api.put(`/targets/${id}`, data),
+  delete: (id) => api.delete(`/targets/${id}`),
+};
+
+// ============================================
 // DEBT & RECEIVABLE ENDPOINTS
 // ============================================
 

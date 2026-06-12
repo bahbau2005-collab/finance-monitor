@@ -98,7 +98,7 @@ function Dashboard({ dark }) {
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <p className="text-inksoft text-xs lg:text-sm">Total Kekayaan Bersih</p>
-            <h2 className="text-3xl lg:text-5xl font-bold text-ink mt-1 tracking-tight">Rp {combinedTotalAssets.toLocaleString('id-ID')}</h2>
+            <h2 className="text-3xl lg:text-5xl font-bold figure-gold mt-1 tracking-tight">Rp {combinedTotalAssets.toLocaleString('id-ID')}</h2>
             <p className="text-inkfaint text-xs mt-2">Aset investasi + Cash + Piutang belum tertagih</p>
           </div>
           <span className="hidden sm:flex w-12 h-12 rounded-2xl bg-accentsoft text-accentink items-center justify-center flex-shrink-0">

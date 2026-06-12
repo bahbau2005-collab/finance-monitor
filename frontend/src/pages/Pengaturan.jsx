@@ -1,6 +1,6 @@
 function Pengaturan({ dark, onToggleTheme, onOpenPassword, onLogout }) {
   return (
-    <div className="space-y-6 lg:space-y-8 max-w-2xl">
+    <div className="space-y-6 lg:space-y-8 max-w-2xl mx-auto w-full">
       <div>
         <h1 className="text-2xl lg:text-4xl font-bold text-ink mb-2">Pengaturan</h1>
         <p className="text-xs lg:text-sm text-inksoft">Atur tampilan dan akun Anda</p>

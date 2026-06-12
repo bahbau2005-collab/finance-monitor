@@ -30,20 +30,20 @@ function Login({ onSuccess }) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-bg text-ink px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg mb-4">
-            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-              <rect x="3" y="11" width="18" height="10" rx="2" />
-              <path d="M7 11V7a5 5 0 0110 0v4" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-accentsoft text-accentink mb-4">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth={1.7} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 8l7-4 7 4-7 4-7-4z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 12l7 4 7-4M5 16l7 4 7-4" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Finance Monitor</h1>
-          <p className="text-sm text-gray-500 mt-1">Masuk untuk mengakses data keuangan Anda</p>
+          <h1 className="text-2xl font-bold text-ink">Finance Monitor</h1>
+          <p className="text-sm text-inksoft mt-1">Masuk untuk mengakses data keuangan Anda</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-blue-100 p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="bg-surface rounded-2xl shadow-xl border border-line p-6 space-y-4">
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
               <span className="text-red-600 font-bold">✗</span>

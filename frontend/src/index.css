@@ -1,112 +1,146 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* ============================================ */
-/* GLOBAL STYLES */
+/* DESIGN TOKENS — "Champagne" (netral + aksen emas) */
 /* ============================================ */
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+:root {
+  --bg: #faf8f2;
+  --surface: #ffffff;
+  --surface-2: #f4f1e8;
+  --ink: #211f1b;
+  --ink-soft: #6e6a61;
+  --ink-faint: #9a958a;
+  --line: rgba(33, 31, 27, 0.10);
+  --line-strong: rgba(33, 31, 27, 0.16);
+  --accent: #b08c4a;
+  --accent-soft: #f0e7d4;
+  --accent-ink: #6a5320;
+  --btn-primary-bg: #9a7636;
+  --btn-primary-text: #ffffff;
+  --up: #5c7c58;
+  --down: #b25c43;
+  --shadow-sm: 0 1px 2px rgba(33, 31, 27, 0.05);
+  --shadow: 0 1px 2px rgba(33, 31, 27, 0.04), 0 10px 28px rgba(33, 31, 27, 0.06);
 }
 
+.dark {
+  --bg: #131210;
+  --surface: #1c1a15;
+  --surface-2: #24211a;
+  --ink: #ece7db;
+  --ink-soft: #a8a296;
+  --ink-faint: #78736a;
+  --line: rgba(255, 255, 255, 0.10);
+  --line-strong: rgba(255, 255, 255, 0.16);
+  --accent: #cba968;
+  --accent-soft: #2a2418;
+  --accent-ink: #e6d3a6;
+  --btn-primary-bg: #cba968;
+  --btn-primary-text: #1c1a15;
+  --up: #8fb07f;
+  --down: #d08763;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 28px rgba(0, 0, 0, 0.45);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
-  color: #1f2937;
+  background: var(--bg);
+  color: var(--ink);
   min-height: 100vh;
 }
 
 /* ============================================ */
-/* UTILITY CLASSES */
+/* KOMPONEN */
 /* ============================================ */
-
 .card {
-  @apply bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-6 border border-blue-50 hover:shadow-xl transition-shadow duration-300;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+  transition: border-color .2s ease, box-shadow .2s ease;
 }
 
 .btn {
-  @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg;
+  padding: 0.55rem 1.1rem;
+  border-radius: 10px;
+  font-weight: 500;
+  transition: all .18s ease;
+  border: 1px solid transparent;
 }
+.btn:active { transform: translateY(0.5px); }
 
-.btn-primary {
-  @apply bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:shadow-lg hover:scale-105;
-}
+.btn-primary { background: var(--btn-primary-bg); color: var(--btn-primary-text); }
+.btn-primary:hover { filter: brightness(1.05); box-shadow: var(--shadow-sm); }
 
-.btn-secondary {
-  @apply bg-gray-500 text-white hover:bg-gray-600 hover:shadow-lg;
-}
+.btn-secondary { background: transparent; color: var(--ink-soft); border-color: var(--line-strong); }
+.btn-secondary:hover { background: var(--surface-2); color: var(--ink); }
 
-.btn-danger {
-  @apply bg-gradient-to-r from-red-500 to-pink-600 text-white hover:shadow-lg;
-}
+.btn-danger { background: var(--down); color: #fff; }
+.btn-danger:hover { filter: brightness(1.05); }
 
-.btn-outline {
-  @apply bg-white border-2 border-blue-500 text-blue-600 hover:bg-blue-50 hover:shadow-lg font-medium;
-}
+.btn-outline { background: transparent; border-color: var(--accent); color: var(--accent-ink); }
+.btn-outline:hover { background: var(--accent-soft); }
 
 .input-field {
-  @apply w-full px-4 py-2 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/80 backdrop-blur-sm transition-all duration-200;
+  width: 100%;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  transition: border-color .18s ease, box-shadow .18s ease;
 }
+.input-field::placeholder { color: var(--ink-faint); }
+.input-field:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+select.input-field option { color: initial; }
 
 /* ============================================ */
-/* RESPONSIVE DESIGN */
+/* DARK-MODE SHIM — agar halaman yang masih pakai utility Tailwind
+   lama tetap terbaca rapi di mode gelap (sebelum di-revamp penuh). */
 /* ============================================ */
+.dark .bg-white { background-color: var(--surface) !important; }
+.dark .bg-gray-50,
+.dark .bg-gray-100 { background-color: var(--surface-2) !important; }
+.dark .text-gray-900,
+.dark .text-gray-800 { color: var(--ink) !important; }
+.dark .text-gray-700,
+.dark .text-gray-600 { color: var(--ink-soft) !important; }
+.dark .text-gray-500,
+.dark .text-gray-400 { color: var(--ink-faint) !important; }
+.dark .border-gray-200,
+.dark .border-gray-100,
+.dark .border-blue-50,
+.dark .border-blue-100 { border-color: var(--line) !important; }
+.dark .hover\:bg-gray-50:hover,
+.dark .hover\:bg-gray-100:hover { background-color: var(--surface-2) !important; }
+.dark .bg-blue-50 { background-color: var(--surface-2) !important; }
+.dark thead.bg-gray-50 { background-color: var(--surface-2) !important; }
 
+/* ============================================ */
+/* RESPONSIVE */
+/* ============================================ */
 @media (max-width: 1024px) {
-  .card {
-    @apply p-4 rounded-lg;
-  }
-  
-  .btn {
-    @apply px-3 py-2 text-sm;
-  }
-  
-  .input-field {
-    @apply px-3 py-2 text-sm;
-  }
+  .card { padding: 1.1rem; border-radius: 14px; }
 }
-
 @media (max-width: 640px) {
-  .card {
-    @apply p-3 rounded-lg;
-  }
-  
-  .btn {
-    @apply px-2 py-1.5 text-xs;
-  }
-  
-  .input-field {
-    @apply px-2 py-1.5 text-sm;
-  }
-  
-  h1 {
-    @apply text-xl;
-  }
-  
-  h2 {
-    @apply text-lg;
-  }
-  
-  h3 {
-    @apply text-base;
-  }
+  .card { padding: 0.9rem; border-radius: 12px; }
+  .btn { padding: 0.5rem 0.85rem; font-size: 0.875rem; }
+  .input-field { padding: 0.5rem 0.7rem; font-size: 0.9rem; }
 }
 
-/* ============================================ */
-/* GRID RESPONSIVENESS */
-/* ============================================ */
-
-.grid-responsive {
-  @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4;
-}
-
-.grid-responsive-2 {
-  @apply grid grid-cols-1 md:grid-cols-2 gap-4;
-}
+.grid-responsive { @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4; }
+.grid-responsive-2 { @apply grid grid-cols-1 md:grid-cols-2 gap-4; }

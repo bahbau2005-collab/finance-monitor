@@ -79,7 +79,7 @@ const TargetIcon = () => (
   </svg>
 )
 
-function AppContent({ onLogout }) {
+function AppContent({ onLogout, dark, onToggleTheme }) {
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [pwOpen, setPwOpen] = useState(false)
@@ -96,44 +96,65 @@ function AppContent({ onLogout }) {
   }, [sidebarOpen])
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="h-screen flex flex-col overflow-hidden bg-bg text-ink">
       {/* HEADER */}
-      <header className="bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg z-50 flex-shrink-0">
-        <div className="px-4 lg:px-6 py-4 lg:py-5">
+      <header className="bg-surface border-b border-line z-50 flex-shrink-0">
+        <div className="px-4 lg:px-6 py-3 lg:py-4">
           <div className="flex items-center justify-between">
-            <div className="flex-1 min-w-0">
-              <h1 className="text-xl lg:text-3xl font-bold text-white tracking-tight whitespace-nowrap">Finance Monitor</h1>
-              <p className="text-blue-100 text-[11px] lg:text-sm mt-1 truncate">Personal Finance Management System</p>
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <span className="flex w-9 h-9 lg:w-10 lg:h-10 rounded-xl bg-accentsoft text-accentink items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.7} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 8l7-4 7 4-7 4-7-4z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 12l7 4 7-4M5 16l7 4 7-4" />
+                </svg>
+              </span>
+              <div className="min-w-0">
+                <h1 className="text-lg lg:text-2xl font-bold text-ink tracking-tight whitespace-nowrap">Finance Monitor</h1>
+                <p className="text-inksoft text-[11px] lg:text-sm mt-0.5 truncate">Personal Finance Management</p>
+              </div>
             </div>
-            {/* Tombol Ganti Password */}
+            {/* Toggle tema */}
+            <button
+              onClick={onToggleTheme}
+              className="ml-1 p-2 hover:bg-surface2 rounded-lg transition-colors text-inksoft"
+              title={dark ? 'Mode terang' : 'Mode gelap'}
+              aria-label="Toggle tema"
+            >
+              {dark ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path strokeLinecap="round" d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19" /></svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z" /></svg>
+              )}
+            </button>
+            {/* Ganti Password */}
             <button
               onClick={() => setPwOpen(true)}
-              className="ml-2 px-3 py-2 hover:bg-blue-500 rounded-lg transition-colors flex items-center gap-2 text-white"
+              className="ml-1 px-2.5 py-2 hover:bg-surface2 rounded-lg transition-colors flex items-center gap-2 text-inksoft"
               title="Ganti Password"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a4 4 0 11-8 0 4 4 0 018 0zM7 11a5 5 0 00-5 5v1h10M16 11l5 5m0-5l-5 5" />
               </svg>
-              <span className="hidden sm:inline text-sm font-medium">Password</span>
+              <span className="hidden md:inline text-sm font-medium">Password</span>
             </button>
-            {/* Tombol Logout */}
+            {/* Logout */}
             <button
               onClick={onLogout}
-              className="ml-2 px-3 py-2 hover:bg-blue-500 rounded-lg transition-colors flex items-center gap-2 text-white"
+              className="ml-1 px-2.5 py-2 hover:bg-surface2 rounded-lg transition-colors flex items-center gap-2 text-inksoft"
               title="Keluar"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 12H3m0 0l4-4m-4 4l4 4M21 3v18" />
               </svg>
-              <span className="hidden sm:inline text-sm font-medium">Keluar</span>
+              <span className="hidden md:inline text-sm font-medium">Keluar</span>
             </button>
-            {/* Hamburger Menu untuk Mobile */}
+            {/* Hamburger (HP) */}
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="lg:hidden ml-2 p-2 hover:bg-blue-500 rounded-lg transition-colors"
+              className="lg:hidden ml-1 p-2 hover:bg-surface2 rounded-lg transition-colors text-inksoft"
               aria-label="Toggle menu"
             >
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
@@ -151,7 +172,7 @@ function AppContent({ onLogout }) {
         )}
 
         {/* SIDEBAR */}
-        <aside className={`fixed lg:static inset-y-0 lg:inset-auto left-0 z-30 lg:z-auto w-64 bg-white/95 lg:bg-white/80 backdrop-blur-md shadow-xl lg:shadow-none h-full overflow-y-auto overscroll-contain border-r border-blue-100 transition-transform duration-300 flex-shrink-0 pt-20 lg:pt-0 pb-4 ${
+        <aside className={`fixed lg:static inset-y-0 lg:inset-auto left-0 z-30 lg:z-auto w-64 bg-surface shadow-xl lg:shadow-none h-full overflow-y-auto overscroll-contain border-r border-line transition-transform duration-300 flex-shrink-0 pt-20 lg:pt-0 pb-4 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}>
           <nav className="p-6 space-y-2">
@@ -160,8 +181,8 @@ function AppContent({ onLogout }) {
               to="/"
               className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
                 location.pathname === '/'
-                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
-                  : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
+                  ? 'bg-accentsoft text-accentink shadow-sm'
+                  : 'text-inksoft hover:bg-surface2 hover:text-ink'
               }`}
             >
               <DashboardIcon />
@@ -173,8 +194,8 @@ function AppContent({ onLogout }) {
               to="/aset"
               className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
                 location.pathname === '/aset'
-                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
-                  : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
+                  ? 'bg-accentsoft text-accentink shadow-sm'
+                  : 'text-inksoft hover:bg-surface2 hover:text-ink'
               }`}
             >
               <AsetIcon />
@@ -186,8 +207,8 @@ function AppContent({ onLogout }) {
               to="/cash"
               className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
                 location.pathname === '/cash'
-                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
-                  : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
+                  ? 'bg-accentsoft text-accentink shadow-sm'
+                  : 'text-inksoft hover:bg-surface2 hover:text-ink'
               }`}
             >
               <CashIcon />
@@ -199,8 +220,8 @@ function AppContent({ onLogout }) {
               to="/arus-kas"
               className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
                 location.pathname === '/arus-kas'
-                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
-                  : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
+                  ? 'bg-accentsoft text-accentink shadow-sm'
+                  : 'text-inksoft hover:bg-surface2 hover:text-ink'
               }`}
             >
               <ArusKasIcon />
@@ -212,8 +233,8 @@ function AppContent({ onLogout }) {
               to="/hutang-piutang"
               className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
                 location.pathname === '/hutang-piutang'
-                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
-                  : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
+                  ? 'bg-accentsoft text-accentink shadow-sm'
+                  : 'text-inksoft hover:bg-surface2 hover:text-ink'
               }`}
             >
               <HutangPiutangIcon />
@@ -225,8 +246,8 @@ function AppContent({ onLogout }) {
               to="/laporan-keuangan"
               className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
                 location.pathname === '/laporan-keuangan'
-                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
-                  : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
+                  ? 'bg-accentsoft text-accentink shadow-sm'
+                  : 'text-inksoft hover:bg-surface2 hover:text-ink'
               }`}
             >
               <LaporanIcon />
@@ -238,8 +259,8 @@ function AppContent({ onLogout }) {
               to="/target"
               className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
                 location.pathname === '/target'
-                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
-                  : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
+                  ? 'bg-accentsoft text-accentink shadow-sm'
+                  : 'text-inksoft hover:bg-surface2 hover:text-ink'
               }`}
             >
               <TargetIcon />
@@ -266,9 +287,9 @@ function AppContent({ onLogout }) {
           </div>
 
           {/* FOOTER (ikut scroll konten) */}
-          <footer className="bg-white/80 backdrop-blur-md border-t border-blue-100">
-            <div className="px-4 lg:px-6 py-6 lg:py-8 text-center text-gray-600 text-xs lg:text-sm">
-              <p>© 2025 Finance Monitor. Elegant Financial Management.</p>
+          <footer className="bg-surface border-t border-line">
+            <div className="px-4 lg:px-6 py-6 lg:py-8 text-center text-inkfaint text-xs lg:text-sm">
+              <p>© 2025 Finance Monitor · Elegant Financial Management</p>
             </div>
           </footer>
         </main>
@@ -284,6 +305,19 @@ function App() {
   const [isConnected, setIsConnected] = useState(false)
   const [loading, setLoading] = useState(true)
   const [isAuthed, setIsAuthed] = useState(false)
+  const [dark, setDark] = useState(() => {
+    const saved = localStorage.getItem('theme')
+    if (saved) return saved === 'dark'
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+  })
+
+  // Terapkan tema ke <html> dan simpan preferensi
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', dark)
+    localStorage.setItem('theme', dark ? 'dark' : 'light')
+  }, [dark])
+
+  const toggleTheme = () => setDark(d => !d)
 
   // Saat App mount: cek koneksi backend, lalu cek validitas token (jika ada)
   useEffect(() => {
@@ -353,7 +387,7 @@ function App() {
 
   return (
     <Router>
-      <AppContent onLogout={handleLogout} />
+      <AppContent onLogout={handleLogout} dark={dark} onToggleTheme={toggleTheme} />
     </Router>
   )
 }

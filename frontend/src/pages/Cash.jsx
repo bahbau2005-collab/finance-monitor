@@ -91,7 +91,7 @@ function Cash() {
       <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
         <div className="card">
           <p className="text-gray-600 text-xs lg:text-sm mb-2">Total Cash</p>
-          <h2 className="text-2xl lg:text-3xl font-bold text-up">
+          <h2 className="text-2xl lg:text-3xl font-bold figure-gold">
             Rp {accounts.reduce((s, a) => s + (Number(a.balance) || 0), 0).toLocaleString('id-ID')}
           </h2>
           <p className="text-gray-500 text-xs mt-2">Jumlah saldo pada semua rekening cash</p>

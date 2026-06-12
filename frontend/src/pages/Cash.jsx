@@ -7,6 +7,8 @@ function Cash() {
   const [name, setName] = useState('')
   const [balance, setBalance] = useState('')
   const [editing, setEditing] = useState(null)
+  const [saving, setSaving] = useState(false) // cegah double-submit tambah rekening
+  const [savingBalance, setSavingBalance] = useState(false) // cegah double-submit update saldo
 
   useEffect(() => {
     fetchAccounts()
@@ -27,6 +29,9 @@ function Cash() {
 
   const handleAdd = async (e) => {
     e.preventDefault()
+    if (saving) return // cegah double-submit
+    if (!name.trim()) { alert('Nama rekening wajib diisi'); return }
+    setSaving(true)
     try {
       const res = await cashService.create({ name, balance: Number(balance) || 0 })
       setAccounts(prev => [res.data.data, ...prev])
@@ -35,6 +40,8 @@ function Cash() {
     } catch (err) {
       console.error('Gagal membuat account', err)
       alert('Gagal membuat rekening')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -46,6 +53,8 @@ function Cash() {
 
   const submitBalance = async (e) => {
     e.preventDefault()
+    if (savingBalance) return // cegah double-submit
+    setSavingBalance(true)
     try {
       const res = await cashService.updateBalance(editing.id, { balance: Number(editing.balance) || 0, updatedAt: new Date().toISOString() })
       setAccounts(prev => prev.map(a => a._id === editing.id ? res.data.data : a))
@@ -53,6 +62,8 @@ function Cash() {
     } catch (err) {
       console.error('Gagal update balance', err)
       alert('Gagal memperbarui saldo')
+    } finally {
+      setSavingBalance(false)
     }
   }
 
@@ -90,7 +101,7 @@ function Cash() {
           <input placeholder="Nama Rekening (contoh: Mandiri)" value={name} onChange={e => setName(e.target.value)} className="input-field" />
           <input placeholder="Saldo awal (Rp)" type="number" value={balance} onChange={e => setBalance(e.target.value)} className="input-field" />
           <div className="flex gap-2">
-            <button className="btn btn-primary flex-1 lg:flex-none" type="submit">Tambah Rekening</button>
+            <button className="btn btn-primary flex-1 lg:flex-none disabled:opacity-60 disabled:cursor-not-allowed" type="submit" disabled={saving}>{saving ? 'Menyimpan...' : 'Tambah Rekening'}</button>
             <button type="button" className="btn btn-secondary flex-1 lg:flex-none" onClick={() => { setName(''); setBalance('') }}>Reset</button>
           </div>
         </form>
@@ -134,7 +145,7 @@ function Cash() {
               </div>
               <div className="flex justify-end gap-2">
                 <button type="button" className="btn btn-secondary" onClick={closeEdit}>Batal</button>
-                <button type="submit" className="btn btn-primary">Simpan</button>
+                <button type="submit" className="btn btn-primary disabled:opacity-60 disabled:cursor-not-allowed" disabled={savingBalance}>{savingBalance ? 'Menyimpan...' : 'Simpan'}</button>
               </div>
             </form>
           </div>

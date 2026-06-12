@@ -16,6 +16,8 @@ function HutangPiutang() {
 
   const [formErrors, setFormErrors] = useState({})
   const [formMsg, setFormMsg] = useState(null) // { type: 'success' | 'error', text }
+  const [saving, setSaving] = useState(false) // cegah double-submit (form data)
+  const [savingPayment, setSavingPayment] = useState(false) // cegah double-submit (pembayaran)
   const [editingId, setEditingId] = useState(null)
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [paymentForId, setPaymentForId] = useState(null)
@@ -169,6 +171,7 @@ function HutangPiutang() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (saving) return // cegah double-submit saat request masih berjalan
     setFormMsg(null)
 
     const errors = validateForm()
@@ -180,6 +183,7 @@ function HutangPiutang() {
     }
     setFormErrors({})
 
+    setSaving(true)
     try {
       const payload = {
         ...form,
@@ -201,6 +205,8 @@ function HutangPiutang() {
       // Tampilkan pesan spesifik dari backend jika ada
       const backendMsg = err?.response?.data?.message || err?.response?.data?.error
       setFormMsg({ type: 'error', text: backendMsg ? `Gagal menyimpan: ${backendMsg}` : 'Gagal menyimpan data. Periksa koneksi ke server dan coba lagi.' })
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -276,15 +282,18 @@ function HutangPiutang() {
 
   const submitPayment = async (e) => {
     e.preventDefault()
+    if (savingPayment) return // cegah double-submit pembayaran
     const amt = Number(paymentForm.amount)
     if (!amt || amt <= 0) { alert('Jumlah pembayaran harus > 0'); return }
 
+    setSavingPayment(true)
     try {
       if (paymentEdit) {
         await debtService.updatePayment(paymentEdit.debtId, paymentEdit.index, { amount: amt, date: paymentForm.date, note: paymentForm.note })
       } else if (paymentForId) {
         await debtService.addPayment(paymentForId, { amount: amt, date: paymentForm.date, note: paymentForm.note })
       } else {
+        setSavingPayment(false)
         return
       }
 
@@ -292,6 +301,8 @@ function HutangPiutang() {
       fetchDebts()
     } catch {
       alert('Gagal menyimpan pembayaran')
+    } finally {
+      setSavingPayment(false)
     }
   }
 
@@ -383,7 +394,9 @@ function HutangPiutang() {
             </select>
           </div>
           <div className="flex items-end">
-            <button type="submit" className="btn btn-primary">{editingId ? 'Simpan Perubahan' : 'Tambah'}</button>
+            <button type="submit" className="btn btn-primary disabled:opacity-60 disabled:cursor-not-allowed" disabled={saving}>
+              {saving ? 'Menyimpan...' : (editingId ? 'Simpan Perubahan' : 'Tambah')}
+            </button>
           </div>
         </form>
       </div>
@@ -600,11 +613,13 @@ function HutangPiutang() {
                   <button type="button" className="btn btn-secondary" onClick={closePaymentModal}>Batal</button>
                   <div className="flex gap-2">
                     {paymentEdit && (
-                      <button type="button" className="btn btn-danger" onClick={() => deletePayment(paymentEdit.debtId, paymentEdit.index)}>
+                      <button type="button" className="btn btn-danger" onClick={() => deletePayment(paymentEdit.debtId, paymentEdit.index)} disabled={savingPayment}>
                         Hapus
                       </button>
                     )}
-                    <button type="submit" className="btn btn-primary">Simpan</button>
+                    <button type="submit" className="btn btn-primary disabled:opacity-60 disabled:cursor-not-allowed" disabled={savingPayment}>
+                      {savingPayment ? 'Menyimpan...' : 'Simpan'}
+                    </button>
                   </div>
                 </div>
               </form>

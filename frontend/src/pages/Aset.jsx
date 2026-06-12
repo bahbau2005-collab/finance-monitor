@@ -27,6 +27,7 @@ function Aset() {
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [editingId, setEditingId] = useState(null)
   const [editData, setEditData] = useState(null)
+  const [savingEdit, setSavingEdit] = useState(false) // cegah double-submit edit transaksi
   const [expandedDesc, setExpandedDesc] = useState(new Set())
 
   const toggleDesc = (id) => {
@@ -322,6 +323,7 @@ function Aset() {
   const handleUpdateSubmit = async (e) => {
     e.preventDefault()
     if (!editData) return
+    if (savingEdit) return // cegah double-submit
     const payload = {
       txType: editData.txType,
       assetType: editData.assetType,
@@ -331,12 +333,15 @@ function Aset() {
       transactionDate: editData.transactionDate,
       description: editData.description,
     }
+    setSavingEdit(true)
     try {
       const res = await transactionService.update(editingId, payload)
       setTransactions(prev => prev.map(t => (t._id === editingId ? res.data?.data : t)))
       closeEdit()
     } catch {
       alert('Gagal mengupdate transaksi')
+    } finally {
+      setSavingEdit(false)
     }
   }
 
@@ -600,7 +605,7 @@ function Aset() {
               </div>
               <div className="flex justify-end gap-2">
                 <button type="button" onClick={closeEdit} className="btn btn-secondary">Batal</button>
-                <button type="submit" className="btn btn-primary">Simpan Perubahan</button>
+                <button type="submit" className="btn btn-primary disabled:opacity-60 disabled:cursor-not-allowed" disabled={savingEdit}>{savingEdit ? 'Menyimpan...' : 'Simpan Perubahan'}</button>
               </div>
             </form>
           </div>

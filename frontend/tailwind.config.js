@@ -21,6 +21,12 @@ export default {
         accentink: 'var(--accent-ink)',
         up: 'var(--up)',
         down: 'var(--down)',
+        upsoft: 'var(--up-soft)',
+        upink: 'var(--up-ink)',
+        downsoft: 'var(--down-soft)',
+        downink: 'var(--down-ink)',
+        upfill: 'var(--up-fill)',
+        downfill: 'var(--down-fill)',
         // legacy
         primary: '#3b82f6',
         secondary: '#10b981',

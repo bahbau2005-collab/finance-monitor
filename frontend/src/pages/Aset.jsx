@@ -362,14 +362,14 @@ function Aset() {
           <button
             type="button"
             onClick={() => setFormData(prev => ({ ...prev, txType: 'buy', cashAccountId: '' }))}
-            className={`px-5 py-2 rounded-md text-sm font-medium transition-all ${formData.txType === 'buy' ? 'bg-green-600 text-white shadow' : 'text-gray-600 hover:text-ink'}`}
+            className={`px-5 py-2 rounded-md text-sm font-medium transition-all ${formData.txType === 'buy' ? 'bg-upfill text-white shadow' : 'text-gray-600 hover:text-ink'}`}
           >
             Beli / Tambah
           </button>
           <button
             type="button"
             onClick={() => setFormData(prev => ({ ...prev, txType: 'sell' }))}
-            className={`px-5 py-2 rounded-md text-sm font-medium transition-all ${formData.txType === 'sell' ? 'bg-red-600 text-white shadow' : 'text-gray-600 hover:text-ink'}`}
+            className={`px-5 py-2 rounded-md text-sm font-medium transition-all ${formData.txType === 'sell' ? 'bg-downfill text-white shadow' : 'text-gray-600 hover:text-ink'}`}
           >
             Jual / Kurangi
           </button>
@@ -377,12 +377,12 @@ function Aset() {
 
         {inputSuccess && (
           <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded">
-            <p className="text-green-700">✓ Transaksi berhasil disimpan!</p>
+            <p className="text-up">✓ Transaksi berhasil disimpan!</p>
           </div>
         )}
         {inputError && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded">
-            <p className="text-red-700">✗ {inputError}</p>
+            <p className="text-down">✗ {inputError}</p>
           </div>
         )}
         <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
@@ -496,7 +496,7 @@ function Aset() {
         {loading ? (
           <div className="text-center py-8 text-gray-600">Loading...</div>
         ) : error ? (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">{error}</div>
+          <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-down">{error}</div>
         ) : transactions.length === 0 ? (
           <div className="text-center py-8 text-gray-500">Belum ada transaksi</div>
         ) : (
@@ -522,13 +522,13 @@ function Aset() {
                   <td className="px-4 py-3 text-sm font-medium">
                     <span className="flex items-center gap-2">
                       {tx.assetName}
-                      <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold ${tx.txType === 'sell' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                      <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold ${tx.txType === 'sell' ? 'bg-downsoft text-downink' : 'bg-upsoft text-upink'}`}>
                         {tx.txType === 'sell' ? 'JUAL' : 'BELI'}
                       </span>
                     </span>
                   </td>
                   <td className="px-4 py-3 text-sm text-center">{tx.txType === 'sell' ? '−' : ''}{formatQuantityTx(tx)}</td>
-                  <td className={`px-4 py-3 text-sm text-right font-semibold ${tx.txType === 'sell' ? 'text-red-600' : 'text-green-600'}`}>{tx.txType === 'sell' ? '− ' : ''}Rp {tx.nominal.toLocaleString('id-ID')}</td>
+                  <td className={`px-4 py-3 text-sm text-right font-semibold ${tx.txType === 'sell' ? 'text-down' : 'text-up'}`}>{tx.txType === 'sell' ? '− ' : ''}Rp {tx.nominal.toLocaleString('id-ID')}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 max-w-xs">
                     {tx.description ? (
                       <button
@@ -543,7 +543,7 @@ function Aset() {
                   </td>
                   <td className="px-4 py-3 text-center space-x-2">
                     <button onClick={() => openEdit(tx)} className="text-accentink hover:opacity-70 font-medium text-sm">Edit</button>
-                    <button onClick={() => handleDelete(tx._id)} className="text-red-500 hover:text-red-700 font-medium text-sm">Hapus</button>
+                    <button onClick={() => handleDelete(tx._id)} className="text-down hover:opacity-70 font-medium text-sm">Hapus</button>
                   </td>
                 </tr>
               ))}
@@ -621,7 +621,7 @@ function Aset() {
             </div>
             <div className="card text-center">
               <p className="text-gray-600 text-sm">Nilai Bersih (Beli − Jual)</p>
-              <p className="text-2xl font-bold text-green-600">{formatCurrency(transactions.reduce((s, tx) => s + signedNominal(tx), 0))}</p>
+              <p className="text-2xl font-bold text-up">{formatCurrency(transactions.reduce((s, tx) => s + signedNominal(tx), 0))}</p>
             </div>
             <div className="card text-center">
               <p className="text-gray-600 text-sm">Total Nilai Beli</p>

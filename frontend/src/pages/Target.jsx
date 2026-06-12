@@ -207,7 +207,7 @@ function Target() {
         </p>
 
         {msg && (
-          <div className={`mb-4 p-3 rounded-lg border text-sm ${msg.type === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
+          <div className={`mb-4 p-3 rounded-lg border text-sm ${msg.type === 'success' ? 'bg-green-50 border-green-200 text-up' : 'bg-red-50 border-red-200 text-down'}`}>
             {msg.type === 'success' ? '✓ ' : '✗ '}{msg.text}
           </div>
         )}
@@ -273,7 +273,7 @@ function Target() {
                   </div>
                   <div className="flex gap-2 text-sm shrink-0">
                     <button onClick={() => openEdit(t)} className="text-accentink hover:opacity-70 font-medium">Edit</button>
-                    <button onClick={() => handleDelete(t._id)} className="text-red-500 hover:text-red-700 font-medium">Hapus</button>
+                    <button onClick={() => handleDelete(t._id)} className="text-down hover:opacity-70 font-medium">Hapus</button>
                   </div>
                 </div>
 
@@ -284,12 +284,12 @@ function Target() {
                     <span className="text-gray-500">dari {fmtBase(t, t.targetAmount)}</span>
                   </div>
                   <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
-                    <div className={`h-full rounded-full transition-all ${done ? 'bg-green-500' : 'bg-accentink'}`} style={{ width: `${percent}%` }}></div>
+                    <div className={`h-full rounded-full transition-all ${done ? 'bg-upfill' : 'bg-accentink'}`} style={{ width: `${percent}%` }}></div>
                   </div>
                   <div className="flex justify-between text-xs mt-1.5">
-                    <span className={`font-semibold ${done ? 'text-green-600' : 'text-accentink'}`}>{percent.toFixed(1)}%</span>
+                    <span className={`font-semibold ${done ? 'text-up' : 'text-accentink'}`}>{percent.toFixed(1)}%</span>
                     {done ? (
-                      <span className="text-green-600 font-medium">🎉 Tercapai!</span>
+                      <span className="text-up font-medium">🎉 Tercapai!</span>
                     ) : (
                       <span className="text-gray-500">kurang {fmtBase(t, remaining)}</span>
                     )}
@@ -301,7 +301,7 @@ function Target() {
                   <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-600">
                     <p>🎯 Target: {new Date(t.deadline).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                     {pace?.late ? (
-                      <p className="text-red-600 font-medium mt-1">Sudah lewat deadline</p>
+                      <p className="text-down font-medium mt-1">Sudah lewat deadline</p>
                     ) : pace ? (
                       <p className="mt-1">Perlu nabung ±<span className="font-semibold text-gray-800">{fmtBase(t, pace.perMonth)}</span>/bulan ({Math.ceil(pace.monthsLeft)} bulan lagi)</p>
                     ) : null}

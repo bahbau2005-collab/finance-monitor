@@ -46,8 +46,8 @@ function Login({ onSuccess }) {
         <form onSubmit={handleSubmit} className="bg-surface rounded-2xl shadow-xl border border-line p-6 space-y-4">
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
-              <span className="text-red-600 font-bold">✗</span>
-              <span className="text-sm text-red-700">{error}</span>
+              <span className="text-down font-bold">✗</span>
+              <span className="text-sm text-down">{error}</span>
             </div>
           )}
 

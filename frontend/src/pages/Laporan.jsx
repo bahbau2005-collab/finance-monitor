@@ -92,15 +92,15 @@ function Laporan() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="card">
               <p className="text-sm text-gray-600">Pemasukan ({monthLabel})</p>
-              <p className="text-xl lg:text-2xl font-bold text-green-600">{formatCurrency(totalIn)}</p>
+              <p className="text-xl lg:text-2xl font-bold text-up">{formatCurrency(totalIn)}</p>
             </div>
             <div className="card">
               <p className="text-sm text-gray-600">Pengeluaran ({monthLabel})</p>
-              <p className="text-xl lg:text-2xl font-bold text-red-600">{formatCurrency(totalOut)}</p>
+              <p className="text-xl lg:text-2xl font-bold text-down">{formatCurrency(totalOut)}</p>
             </div>
             <div className="card">
               <p className="text-sm text-gray-600">Selisih (Tabungan)</p>
-              <p className={`text-xl lg:text-2xl font-bold ${net >= 0 ? 'text-ink' : 'text-red-600'}`}>{net < 0 ? '− ' : ''}{formatCurrency(Math.abs(net))}</p>
+              <p className={`text-xl lg:text-2xl font-bold ${net >= 0 ? 'text-ink' : 'text-down'}`}>{net < 0 ? '− ' : ''}{formatCurrency(Math.abs(net))}</p>
             </div>
           </div>
 
@@ -115,8 +115,8 @@ function Laporan() {
                   <YAxis tickFormatter={shortRp} tick={{ fontSize: 12 }} width={48} />
                   <Tooltip formatter={(v) => formatCurrency(v)} />
                   <Legend />
-                  <Bar dataKey="Pemasukan" fill="#10B981" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Pengeluaran" fill="#EF4444" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Pemasukan" fill="var(--up-fill)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Pengeluaran" fill="var(--down-fill)" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

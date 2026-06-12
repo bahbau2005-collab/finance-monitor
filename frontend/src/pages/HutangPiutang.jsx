@@ -353,7 +353,7 @@ function HutangPiutang() {
         <h3 className="text-lg font-semibold text-ink mb-4">{editingId ? 'Edit Data' : 'Tambah Data'}</h3>
 
         {formMsg && (
-          <div className={`mb-4 p-3 rounded-lg border flex items-start gap-2 ${formMsg.type === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
+          <div className={`mb-4 p-3 rounded-lg border flex items-start gap-2 ${formMsg.type === 'success' ? 'bg-green-50 border-green-200 text-up' : 'bg-red-50 border-red-200 text-down'}`}>
             <span className="font-bold">{formMsg.type === 'success' ? '✓' : '✗'}</span>
             <span className="text-sm">{formMsg.text}</span>
           </div>
@@ -368,24 +368,24 @@ function HutangPiutang() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Nama Orang <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Nama Orang <span className="text-down">*</span></label>
             <input name="personName" value={form.personName} onChange={handleChange} className={`input-field ${formErrors.personName ? 'border-red-500 focus:ring-red-500' : ''}`} placeholder="Contoh: Andi" />
-            {formErrors.personName && <p className="mt-1 text-xs text-red-600">{formErrors.personName}</p>}
+            {formErrors.personName && <p className="mt-1 text-xs text-down">{formErrors.personName}</p>}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Jumlah (Rp) <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Jumlah (Rp) <span className="text-down">*</span></label>
             <input type="number" name="amount" value={form.amount} onChange={handleChange} className={`input-field ${formErrors.amount ? 'border-red-500 focus:ring-red-500' : ''}`} placeholder="Contoh: 500000" />
-            {formErrors.amount && <p className="mt-1 text-xs text-red-600">{formErrors.amount}</p>}
+            {formErrors.amount && <p className="mt-1 text-xs text-down">{formErrors.amount}</p>}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Tanggal <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Tanggal <span className="text-down">*</span></label>
             <input type="date" name="date" value={form.date} onChange={handleChange} className={`input-field ${formErrors.date ? 'border-red-500 focus:ring-red-500' : ''}`} />
-            {formErrors.date && <p className="mt-1 text-xs text-red-600">{formErrors.date}</p>}
+            {formErrors.date && <p className="mt-1 text-xs text-down">{formErrors.date}</p>}
           </div>
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-2">Alasan/Keterangan</label>
             <textarea name="reason" value={form.reason} onChange={handleChange} className={`input-field ${formErrors.reason ? 'border-red-500 focus:ring-red-500' : ''}`} rows={3} placeholder="Contoh: Pinjam untuk biaya ..."></textarea>
-            {formErrors.reason && <p className="mt-1 text-xs text-red-600">{formErrors.reason}</p>}
+            {formErrors.reason && <p className="mt-1 text-xs text-down">{formErrors.reason}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
@@ -406,15 +406,15 @@ function HutangPiutang() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="card">
           <p className="text-sm text-gray-700">Total Hutang</p>
-          <p className="text-2xl font-bold text-red-600">{formatCurrency(totals.totalHutang)}</p>
+          <p className="text-2xl font-bold text-down">{formatCurrency(totals.totalHutang)}</p>
         </div>
         <div className="card">
           <p className="text-sm text-gray-700">Total Piutang</p>
-          <p className="text-2xl font-bold text-green-600">{formatCurrency(totals.totalPiutang)}</p>
+          <p className="text-2xl font-bold text-up">{formatCurrency(totals.totalPiutang)}</p>
         </div>
         <div className="card">
           <p className="text-sm text-gray-700">Sisa Hutang</p>
-          <p className="text-2xl font-bold text-yellow-700">{formatCurrency(totals.hutangRemaining)}</p>
+          <p className="text-2xl font-bold text-down">{formatCurrency(totals.hutangRemaining)}</p>
         </div>
         <div className="card">
           <p className="text-sm text-gray-700">Sisa Piutang</p>
@@ -466,7 +466,7 @@ function HutangPiutang() {
         {loading ? (
           <div className="text-center py-8 text-gray-600">Loading...</div>
         ) : error ? (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">{error}</div>
+          <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-down">{error}</div>
         ) : filteredAndSortedDebts.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             {filters.query || filters.type || filters.status ? 'Tidak ada data yang sesuai filter' : 'Belum ada data'}
@@ -514,7 +514,7 @@ function HutangPiutang() {
                     </td>
                     <td className="px-4 py-3 text-sm font-medium">{d.type === 'hutang' ? 'HUTANG' : 'PIUTANG'}</td>
                     <td className="px-4 py-3 text-sm">{d.personName}</td>
-                    <td className="px-4 py-3 text-sm text-right text-green-700 font-semibold">{formatCurrency(d.amount)}</td>
+                    <td className="px-4 py-3 text-sm text-right text-up font-semibold">{formatCurrency(d.amount)}</td>
                     <td className="px-4 py-3 text-sm text-right">{formatCurrency(d.paid || 0)}</td>
                     <td className="px-4 py-3 text-sm text-right">{formatCurrency(Math.max(0, (Number(d.amount)||0) - (Number(d.paid)||0)))}</td>
                     <td className="px-4 py-3 text-sm">{new Date(d.date).toLocaleDateString('id-ID')}</td>
@@ -531,14 +531,14 @@ function HutangPiutang() {
                       ) : '-'}
                     </td>
                     <td className="px-4 py-3 text-sm text-center">
-                      <button onClick={() => toggleStatus(d)} className={`px-3 py-1 rounded text-xs font-semibold ${d.status === 'done' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                      <button onClick={() => toggleStatus(d)} className={`px-3 py-1 rounded text-xs font-semibold ${d.status === 'done' ? 'bg-upsoft text-upink' : 'bg-accentsoft text-accentink'}`}>
                         {d.status === 'done' ? 'DONE' : 'ONPROGRESS'}
                       </button>
                     </td>
                     <td className="px-4 py-3 text-sm text-center space-x-2">
                       <button onClick={() => setExpandedPaymentId(isExpanded ? null : d._id)} className="text-accentink hover:opacity-70 font-medium text-xs" title="Lihat riwayat pembayaran">📋</button>
                       <button onClick={() => startEdit(d)} className="text-accentink hover:opacity-70 font-medium text-xs">Edit</button>
-                      <button onClick={() => handleDelete(d._id)} className="text-red-500 hover:text-red-700 font-medium text-xs">Hapus</button>
+                      <button onClick={() => handleDelete(d._id)} className="text-down hover:opacity-70 font-medium text-xs">Hapus</button>
                       <button onClick={() => openPayment(d)} className="text-accentink hover:opacity-70 font-medium text-xs">Bayar</button>
                     </td>
                   </tr>
@@ -558,7 +558,7 @@ function HutangPiutang() {
                                     </div>
                                     <div>
                                       <p className="text-gray-600 text-xs font-medium">Jumlah Bayar</p>
-                                      <p className="font-medium text-green-700">{formatCurrency(pmt.amount)}</p>
+                                      <p className="font-medium text-up">{formatCurrency(pmt.amount)}</p>
                                     </div>
                                     <div>
                                       <p className="text-gray-600 text-xs font-medium">Catatan</p>
@@ -568,7 +568,7 @@ function HutangPiutang() {
                                       <button type="button" className="text-accentink hover:opacity-70 text-xs font-semibold" onClick={() => openEditPayment(d._id, idx, pmt)}>
                                         Edit
                                       </button>
-                                      <button type="button" className="text-red-600 hover:text-red-800 text-xs font-semibold" onClick={() => deletePayment(d._id, idx)}>
+                                      <button type="button" className="text-down hover:opacity-70 text-xs font-semibold" onClick={() => deletePayment(d._id, idx)}>
                                         Hapus
                                       </button>
                                     </div>
@@ -593,7 +593,7 @@ function HutangPiutang() {
         {/* Bulk actions */}
         {selectedIds.size > 0 && (
           <div className="mt-4 flex justify-end">
-            <button className="btn bg-red-500 text-white hover:bg-red-600" onClick={handleBulkDelete}>Hapus {selectedIds.size} Data</button>
+            <button className="btn btn-danger" onClick={handleBulkDelete}>Hapus {selectedIds.size} Data</button>
           </div>
         )}
       </div>
@@ -611,7 +611,7 @@ function HutangPiutang() {
               <>
                 <span className="font-medium text-gray-700">{activeDebt.personName}</span>
                 {' · Sisa '}
-                <span className="font-semibold text-yellow-700">{formatCurrency(sisa)}</span>
+                <span className="font-semibold text-down">{formatCurrency(sisa)}</span>
               </>
             ) : null}
           >

@@ -91,7 +91,7 @@ function Cash() {
       <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
         <div className="card">
           <p className="text-gray-600 text-xs lg:text-sm mb-2">Total Cash</p>
-          <h2 className="text-2xl lg:text-3xl font-bold text-green-600">
+          <h2 className="text-2xl lg:text-3xl font-bold text-up">
             Rp {accounts.reduce((s, a) => s + (Number(a.balance) || 0), 0).toLocaleString('id-ID')}
           </h2>
           <p className="text-gray-500 text-xs mt-2">Jumlah saldo pada semua rekening cash</p>
@@ -122,7 +122,7 @@ function Cash() {
                 <div className="flex-1">
                   <h4 className="font-semibold text-base lg:text-lg">{acc.name}</h4>
                   <p className="text-xs lg:text-sm text-gray-500">Saldo saat ini</p>
-                  <p className="text-xl lg:text-2xl font-bold text-green-600">Rp {Number(acc.balance).toLocaleString('id-ID')}</p>
+                  <p className="text-xl lg:text-2xl font-bold text-up">Rp {Number(acc.balance).toLocaleString('id-ID')}</p>
                   <p className="text-xs text-gray-500">Terakhir diupdate: {acc.lastUpdated ? new Date(acc.lastUpdated).toLocaleString('id-ID') : '-'}</p>
                 </div>
                 <div className="flex flex-col gap-2 w-full sm:w-auto">

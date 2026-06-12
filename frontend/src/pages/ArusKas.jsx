@@ -187,15 +187,15 @@ function ArusKas() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="card">
           <p className="text-sm text-gray-600">Total Pemasukan</p>
-          <p className="text-xl lg:text-2xl font-bold text-green-600">{formatCurrency(totalIn)}</p>
+          <p className="text-xl lg:text-2xl font-bold text-up">{formatCurrency(totalIn)}</p>
         </div>
         <div className="card">
           <p className="text-sm text-gray-600">Total Pengeluaran</p>
-          <p className="text-xl lg:text-2xl font-bold text-red-600">{formatCurrency(totalOut)}</p>
+          <p className="text-xl lg:text-2xl font-bold text-down">{formatCurrency(totalOut)}</p>
         </div>
         <div className="card">
           <p className="text-sm text-gray-600">Selisih</p>
-          <p className={`text-xl lg:text-2xl font-bold ${net >= 0 ? 'text-ink' : 'text-red-600'}`}>{net < 0 ? '− ' : ''}{formatCurrency(Math.abs(net))}</p>
+          <p className={`text-xl lg:text-2xl font-bold ${net >= 0 ? 'text-ink' : 'text-down'}`}>{net < 0 ? '− ' : ''}{formatCurrency(Math.abs(net))}</p>
         </div>
       </div>
 
@@ -206,17 +206,17 @@ function ArusKas() {
         {/* Toggle income/expense */}
         <div className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1 mb-5">
           <button type="button" onClick={() => handleChange({ target: { name: 'type', value: 'income' } })}
-            className={`px-5 py-2 rounded-md text-sm font-medium transition-all ${form.type === 'income' ? 'bg-green-600 text-white shadow' : 'text-gray-600 hover:text-ink'}`}>
+            className={`px-5 py-2 rounded-md text-sm font-medium transition-all ${form.type === 'income' ? 'bg-upfill text-white shadow' : 'text-gray-600 hover:text-ink'}`}>
             Pemasukan
           </button>
           <button type="button" onClick={() => handleChange({ target: { name: 'type', value: 'expense' } })}
-            className={`px-5 py-2 rounded-md text-sm font-medium transition-all ${form.type === 'expense' ? 'bg-red-600 text-white shadow' : 'text-gray-600 hover:text-ink'}`}>
+            className={`px-5 py-2 rounded-md text-sm font-medium transition-all ${form.type === 'expense' ? 'bg-downfill text-white shadow' : 'text-gray-600 hover:text-ink'}`}>
             Pengeluaran
           </button>
         </div>
 
         {msg && (
-          <div className={`mb-4 p-3 rounded-lg border text-sm ${msg.type === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
+          <div className={`mb-4 p-3 rounded-lg border text-sm ${msg.type === 'success' ? 'bg-green-50 border-green-200 text-up' : 'bg-red-50 border-red-200 text-down'}`}>
             {msg.type === 'success' ? '✓ ' : '✗ '}{msg.text}
           </div>
         )}
@@ -281,7 +281,7 @@ function ArusKas() {
       {/* BULK ACTION */}
       {selectedIds.size > 0 && (
         <div className="flex justify-end">
-          <button onClick={handleBulkDelete} className="btn bg-red-500 text-white hover:bg-red-600 flex items-center gap-2">
+          <button onClick={handleBulkDelete} className="btn btn-danger flex items-center gap-2">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
             Hapus {selectedIds.size} Item
           </button>
@@ -314,17 +314,17 @@ function ArusKas() {
                   <td className="px-4 py-3 text-left"><input type="checkbox" className="w-4 h-4" checked={selectedIds.has(f._id)} onChange={() => toggleSelect(f._id)} /></td>
                   <td className="px-4 py-3 text-sm">{new Date(f.date).toLocaleDateString('id-ID')}</td>
                   <td className="px-4 py-3 text-sm">
-                    <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${f.type === 'income' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${f.type === 'income' ? 'bg-upsoft text-upink' : 'bg-downsoft text-downink'}`}>
                       {f.type === 'income' ? 'MASUK' : 'KELUAR'}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-sm">{f.category}</td>
                   <td className="px-4 py-3 text-sm text-gray-600">{f.cashAccountId ? accountName(f.cashAccountId) : '—'}</td>
-                  <td className={`px-4 py-3 text-sm text-right font-semibold ${f.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>{f.type === 'income' ? '+ ' : '− '}{formatCurrency(f.amount)}</td>
+                  <td className={`px-4 py-3 text-sm text-right font-semibold ${f.type === 'income' ? 'text-up' : 'text-down'}`}>{f.type === 'income' ? '+ ' : '− '}{formatCurrency(f.amount)}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 max-w-xs truncate" title={f.note || ''}>{f.note || '-'}</td>
                   <td className="px-4 py-3 text-center space-x-2 whitespace-nowrap">
                     <button onClick={() => openEdit(f)} className="text-accentink hover:opacity-70 font-medium text-sm">Edit</button>
-                    <button onClick={() => handleDelete(f._id)} className="text-red-500 hover:text-red-700 font-medium text-sm">Hapus</button>
+                    <button onClick={() => handleDelete(f._id)} className="text-down hover:opacity-70 font-medium text-sm">Hapus</button>
                   </td>
                 </tr>
               ))}
@@ -339,9 +339,9 @@ function ArusKas() {
           <form onSubmit={submitEdit} className="space-y-4">
             <div className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1">
               <button type="button" onClick={() => handleEditChange({ target: { name: 'type', value: 'income' } })}
-                className={`px-4 py-1.5 rounded-md text-sm font-medium ${editing.type === 'income' ? 'bg-green-600 text-white' : 'text-gray-600'}`}>Pemasukan</button>
+                className={`px-4 py-1.5 rounded-md text-sm font-medium ${editing.type === 'income' ? 'bg-upfill text-white' : 'text-gray-600'}`}>Pemasukan</button>
               <button type="button" onClick={() => handleEditChange({ target: { name: 'type', value: 'expense' } })}
-                className={`px-4 py-1.5 rounded-md text-sm font-medium ${editing.type === 'expense' ? 'bg-red-600 text-white' : 'text-gray-600'}`}>Pengeluaran</button>
+                className={`px-4 py-1.5 rounded-md text-sm font-medium ${editing.type === 'expense' ? 'bg-downfill text-white' : 'text-gray-600'}`}>Pengeluaran</button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>

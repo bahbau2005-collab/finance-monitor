@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { debtService } from '../services/api'
+import Modal from '../components/Modal'
 
 function HutangPiutang() {
   const [debts, setDebts] = useState([])
@@ -602,25 +603,19 @@ function HutangPiutang() {
         const activeDebt = debts.find(d => d._id === (paymentForId || paymentEdit?.debtId))
         const sisa = activeDebt ? Math.max(0, (Number(activeDebt.amount) || 0) - (Number(activeDebt.paid) || 0)) : 0
         return (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
-            <div className="absolute inset-0 bg-black/50" onClick={closePaymentModal}></div>
-            <div className="relative bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-              {/* Header sticky */}
-              <div className="px-5 pt-5 pb-3 border-b border-gray-100 sticky top-0 bg-white">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900">{paymentEdit ? 'Edit Pembayaran' : 'Catat Pembayaran'}</h3>
-                  <button type="button" onClick={closePaymentModal} className="text-gray-400 hover:text-gray-600 text-3xl leading-none px-2 -mr-2" aria-label="Tutup">&times;</button>
-                </div>
-                {activeDebt && (
-                  <p className="mt-1 text-sm text-gray-500">
-                    <span className="font-medium text-gray-700">{activeDebt.personName}</span>
-                    {' · Sisa '}
-                    <span className="font-semibold text-yellow-700">{formatCurrency(sisa)}</span>
-                  </p>
-                )}
-              </div>
-
-              <form onSubmit={submitPayment} className="p-5 space-y-4">
+          <Modal
+            open
+            onClose={closePaymentModal}
+            title={paymentEdit ? 'Edit Pembayaran' : 'Catat Pembayaran'}
+            subtitle={activeDebt ? (
+              <>
+                <span className="font-medium text-gray-700">{activeDebt.personName}</span>
+                {' · Sisa '}
+                <span className="font-semibold text-yellow-700">{formatCurrency(sisa)}</span>
+              </>
+            ) : null}
+          >
+              <form onSubmit={submitPayment} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Jumlah Bayar</label>
                   <input type="number" inputMode="numeric" value={paymentForm.amount} onChange={e => setPaymentForm(prev => ({ ...prev, amount: e.target.value }))} className="input-field text-base" placeholder="Contoh: 100000" autoFocus />
@@ -648,8 +643,7 @@ function HutangPiutang() {
                   </div>
                 </div>
               </form>
-            </div>
-          </div>
+          </Modal>
         )
       })()}
     </div>

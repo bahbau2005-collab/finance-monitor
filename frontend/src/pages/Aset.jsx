@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { transactionService, cashService } from '../services/api'
 import * as XLSX from 'xlsx'
+import Modal from '../components/Modal'
 
 function Aset() {
   // INPUT STATE
@@ -552,10 +553,7 @@ function Aset() {
       </div>
 
       {editingId && editData && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-20">
-          <div role="button" tabIndex={0} className="fixed inset-0 bg-black opacity-40" style={{zIndex:50}} onClick={closeEdit} onKeyDown={(e) => { if (e.key === 'Escape' || e.key === 'Enter') closeEdit() }}></div>
-          <div role="dialog" aria-modal="true" className="relative bg-white rounded-lg shadow-lg p-6 z-60 w-full max-w-xl mx-4" style={{zIndex:60}} onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold mb-4">Edit Transaksi</h3>
+        <Modal open onClose={closeEdit} title="Edit Transaksi" size="lg">
             <form onSubmit={handleUpdateSubmit} className="space-y-4">
               <div>
                 <label htmlFor="editTxType" className="block text-sm font-medium text-gray-700 mb-1">Jenis Transaksi</label>
@@ -603,13 +601,12 @@ function Aset() {
                 <label htmlFor="editDescription" className="block text-sm font-medium text-gray-700 mb-1">Deskripsi</label>
                 <textarea id="editDescription" name="description" value={editData.description} onChange={handleEditChange} className="input-field" rows={3}></textarea>
               </div>
-              <div className="flex justify-end gap-2">
-                <button type="button" onClick={closeEdit} className="btn btn-secondary">Batal</button>
-                <button type="submit" className="btn btn-primary disabled:opacity-60 disabled:cursor-not-allowed" disabled={savingEdit}>{savingEdit ? 'Menyimpan...' : 'Simpan Perubahan'}</button>
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2">
+                <button type="button" onClick={closeEdit} className="btn btn-secondary w-full sm:w-auto">Batal</button>
+                <button type="submit" className="btn btn-primary w-full sm:w-auto disabled:opacity-60 disabled:cursor-not-allowed" disabled={savingEdit}>{savingEdit ? 'Menyimpan...' : 'Simpan Perubahan'}</button>
               </div>
             </form>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* Close table card before showing summaries */}

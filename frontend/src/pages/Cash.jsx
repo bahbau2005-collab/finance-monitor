@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { cashService } from '../services/api'
+import Modal from '../components/Modal'
 
 function Cash() {
   const [accounts, setAccounts] = useState([])
@@ -134,22 +135,18 @@ function Cash() {
 
       {/* EDIT BALANCE MODAL */}
       {editing && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-24">
-          <div className="absolute inset-0 bg-black opacity-40" onClick={closeEdit}></div>
-          <div className="bg-white rounded-lg shadow-lg p-6 z-60 w-full max-w-md mx-4 relative" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold mb-3">Update Saldo - {editing.name}</h3>
-            <form onSubmit={submitBalance} className="space-y-3">
-              <div>
-                <label className="block text-sm text-gray-700 mb-1">Saldo (Rp)</label>
-                <input type="number" value={editing.balance} onChange={e => setEditing(prev => ({ ...prev, balance: e.target.value }))} className="input-field" />
-              </div>
-              <div className="flex justify-end gap-2">
-                <button type="button" className="btn btn-secondary" onClick={closeEdit}>Batal</button>
-                <button type="submit" className="btn btn-primary disabled:opacity-60 disabled:cursor-not-allowed" disabled={savingBalance}>{savingBalance ? 'Menyimpan...' : 'Simpan'}</button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <Modal open onClose={closeEdit} title="Update Saldo" subtitle={editing.name}>
+          <form onSubmit={submitBalance} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Saldo (Rp)</label>
+              <input type="number" inputMode="numeric" value={editing.balance} onChange={e => setEditing(prev => ({ ...prev, balance: e.target.value }))} className="input-field text-base" autoFocus />
+            </div>
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2">
+              <button type="button" className="btn btn-secondary w-full sm:w-auto" onClick={closeEdit}>Batal</button>
+              <button type="submit" className="btn btn-primary w-full sm:w-auto disabled:opacity-60 disabled:cursor-not-allowed" disabled={savingBalance}>{savingBalance ? 'Menyimpan...' : 'Simpan'}</button>
+            </div>
+          </form>
+        </Modal>
       )}
     </div>
   )

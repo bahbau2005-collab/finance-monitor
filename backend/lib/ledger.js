@@ -45,4 +45,14 @@ async function upsertLinkedFlow({ source, refId, cashAccountId, flow, amount, ca
   return cf;
 }
 
-module.exports = { applyCashDelta, removeLinkedFlow, upsertLinkedFlow };
+/** Hapus semua cashflow tertaut yang refId-nya diawali prefix tertentu (mis. semua cicilan sebuah hutang). */
+async function removeLinkedFlowsByPrefix(source, refIdPrefix) {
+  if (!source || !refIdPrefix) return;
+  const flows = await CashFlow.find({ source, refId: { $regex: `^${refIdPrefix}` } });
+  for (const f of flows) {
+    await applyCashDelta(f.cashAccountId, f.flow === 'in' ? -f.amount : f.amount);
+    await f.deleteOne();
+  }
+}
+
+module.exports = { applyCashDelta, removeLinkedFlow, removeLinkedFlowsByPrefix, upsertLinkedFlow };

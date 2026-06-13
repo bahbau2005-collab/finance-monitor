@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
-import { debtService } from '../services/api'
+import { debtService, cashService } from '../services/api'
 import Modal from '../components/Modal'
 
 function HutangPiutang() {
   const [debts, setDebts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [cashAccounts, setCashAccounts] = useState([])
   const [form, setForm] = useState({
     type: 'hutang',
     personName: '',
@@ -13,6 +14,7 @@ function HutangPiutang() {
     date: new Date().toISOString().split('T')[0],
     reason: '',
     status: 'onprogress',
+    cashAccountId: '',
   })
 
   const [formErrors, setFormErrors] = useState({})
@@ -23,7 +25,7 @@ function HutangPiutang() {
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [paymentForId, setPaymentForId] = useState(null)
   const [paymentEdit, setPaymentEdit] = useState(null)
-  const [paymentForm, setPaymentForm] = useState({ amount: '', date: new Date().toISOString().split('T')[0], note: '' })
+  const [paymentForm, setPaymentForm] = useState({ amount: '', date: new Date().toISOString().split('T')[0], note: '', cashAccountId: '' })
   const [expandedPaymentId, setExpandedPaymentId] = useState(null)
   const [expandedReason, setExpandedReason] = useState(new Set())
 
@@ -40,7 +42,10 @@ function HutangPiutang() {
 
   useEffect(() => {
     fetchDebts()
+    cashService.getAll().then(res => setCashAccounts(res.data?.data || [])).catch(() => setCashAccounts([]))
   }, [])
+
+  const refreshCash = () => cashService.getAll().then(res => setCashAccounts(res.data?.data || [])).catch(() => {})
 
   const filteredAndSortedDebts = useMemo(() => {
     let items = [...debts]
@@ -198,10 +203,11 @@ function HutangPiutang() {
       } else {
         await debtService.create(payload)
       }
-      setForm({ type: 'hutang', personName: '', amount: '', date: new Date().toISOString().split('T')[0], reason: '', status: 'onprogress' })
+      setForm({ type: 'hutang', personName: '', amount: '', date: new Date().toISOString().split('T')[0], reason: '', status: 'onprogress', cashAccountId: '' })
       setFormMsg({ type: 'success', text: editingId ? 'Perubahan berhasil disimpan.' : 'Data berhasil ditambahkan.' })
       setTimeout(() => setFormMsg(null), 3000)
       fetchDebts()
+      refreshCash()
     } catch (err) {
       // Tampilkan pesan spesifik dari backend jika ada
       const backendMsg = err?.response?.data?.message || err?.response?.data?.error
@@ -212,10 +218,11 @@ function HutangPiutang() {
   }
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Hapus data ini?')) return
+    if (!window.confirm('Hapus data ini? Saldo Cash terkait akan dikembalikan.')) return
     try {
       await debtService.delete(id)
       fetchDebts()
+      refreshCash()
     } catch {
       alert('Gagal menghapus data')
     }
@@ -231,6 +238,7 @@ function HutangPiutang() {
       await Promise.all(Array.from(selectedIds).map(id => debtService.delete(id)))
       setSelectedIds(new Set())
       fetchDebts()
+      refreshCash()
     } catch {
       alert('Gagal menghapus beberapa data')
     }
@@ -266,19 +274,19 @@ function HutangPiutang() {
   const openPayment = (d) => {
     setPaymentForId(d._id)
     setPaymentEdit(null)
-    setPaymentForm({ amount: '', date: new Date().toISOString().split('T')[0], note: '' })
+    setPaymentForm({ amount: '', date: new Date().toISOString().split('T')[0], note: '', cashAccountId: '' })
   }
 
   const openEditPayment = (debtId, index, payment) => {
     setPaymentForId(null)
     setPaymentEdit({ debtId, index, amount: payment.amount, date: new Date(payment.date).toISOString().split('T')[0], note: payment.note || '' })
-    setPaymentForm({ amount: payment.amount, date: new Date(payment.date).toISOString().split('T')[0], note: payment.note || '' })
+    setPaymentForm({ amount: payment.amount, date: new Date(payment.date).toISOString().split('T')[0], note: payment.note || '', cashAccountId: payment.cashAccountId || '' })
   }
 
   const closePaymentModal = () => {
     setPaymentForId(null)
     setPaymentEdit(null)
-    setPaymentForm({ amount: '', date: new Date().toISOString().split('T')[0], note: '' })
+    setPaymentForm({ amount: '', date: new Date().toISOString().split('T')[0], note: '', cashAccountId: '' })
   }
 
   const submitPayment = async (e) => {
@@ -289,10 +297,11 @@ function HutangPiutang() {
 
     setSavingPayment(true)
     try {
+      const body = { amount: amt, date: paymentForm.date, note: paymentForm.note, cashAccountId: paymentForm.cashAccountId || null }
       if (paymentEdit) {
-        await debtService.updatePayment(paymentEdit.debtId, paymentEdit.index, { amount: amt, date: paymentForm.date, note: paymentForm.note })
+        await debtService.updatePayment(paymentEdit.debtId, paymentEdit.index, body)
       } else if (paymentForId) {
-        await debtService.addPayment(paymentForId, { amount: amt, date: paymentForm.date, note: paymentForm.note })
+        await debtService.addPayment(paymentForId, body)
       } else {
         setSavingPayment(false)
         return
@@ -300,6 +309,7 @@ function HutangPiutang() {
 
       closePaymentModal()
       fetchDebts()
+      refreshCash()
     } catch {
       alert('Gagal menyimpan pembayaran')
     } finally {
@@ -308,10 +318,11 @@ function HutangPiutang() {
   }
 
   const deletePayment = async (debtId, index) => {
-    if (!window.confirm('Hapus pembayaran ini?')) return
+    if (!window.confirm('Hapus pembayaran ini? Saldo Cash terkait akan dikembalikan.')) return
     try {
       await debtService.deletePayment(debtId, index)
       fetchDebts()
+      refreshCash()
     } catch {
       alert('Gagal menghapus pembayaran')
     }
@@ -328,6 +339,7 @@ function HutangPiutang() {
       date: new Date(d.date).toISOString().split('T')[0],
       reason: d.reason || '',
       status: d.status,
+      cashAccountId: d.cashAccountId || '',
     })
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -394,7 +406,17 @@ function HutangPiutang() {
               <option value="done">DONE</option>
             </select>
           </div>
-          <div className="flex items-end">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">{form.type === 'hutang' ? 'Uang masuk ke rekening (opsional)' : 'Uang keluar dari rekening (opsional)'}</label>
+            <select name="cashAccountId" value={form.cashAccountId} onChange={handleChange} className="input-field">
+              <option value="">— Tidak terhubung Cash —</option>
+              {cashAccounts.map(acc => (
+                <option key={acc._id} value={acc._id}>{acc.name} (Rp {Number(acc.balance || 0).toLocaleString('id-ID')})</option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-inkfaint">{form.type === 'hutang' ? 'Saat pinjam, uang masuk ke rekening ini.' : 'Saat memberi pinjaman, uang keluar dari rekening ini.'}</p>
+          </div>
+          <div className="md:col-span-2 flex items-end">
             <button type="submit" className="btn btn-primary disabled:opacity-60 disabled:cursor-not-allowed" disabled={saving}>
               {saving ? 'Menyimpan...' : (editingId ? 'Simpan Perubahan' : 'Tambah')}
             </button>
@@ -632,6 +654,15 @@ function HutangPiutang() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Catatan (opsional)</label>
                   <input type="text" value={paymentForm.note} onChange={e => setPaymentForm(prev => ({ ...prev, note: e.target.value }))} className="input-field text-base" placeholder="Misal: transfer BCA" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{activeDebt?.type === 'hutang' ? 'Bayar dari rekening (opsional)' : 'Uang masuk ke rekening (opsional)'}</label>
+                  <select value={paymentForm.cashAccountId} onChange={e => setPaymentForm(prev => ({ ...prev, cashAccountId: e.target.value }))} className="input-field text-base">
+                    <option value="">— Tidak terhubung Cash —</option>
+                    {cashAccounts.map(acc => (
+                      <option key={acc._id} value={acc._id}>{acc.name} (Rp {Number(acc.balance || 0).toLocaleString('id-ID')})</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="flex flex-col-reverse sm:flex-row sm:justify-between gap-2 pt-2">
                   <button type="button" className="btn btn-secondary w-full sm:w-auto" onClick={closePaymentModal}>Batal</button>

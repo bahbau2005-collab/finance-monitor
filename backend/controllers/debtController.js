@@ -1,13 +1,55 @@
 const Debt = require('../models/Debt');
+const { upsertLinkedFlow, removeLinkedFlowsByPrefix } = require('../lib/ledger');
+
+/**
+ * Sinkronkan semua cashflow transfer tertaut sebuah hutang/piutang:
+ * - pokok (saat dibuat): hutang = uang masuk, piutang = uang keluar
+ * - tiap cicilan: hutang = bayar (keluar), piutang = terima (masuk)
+ * Dipanggil tiap kali data/cicilan berubah. Aman dipanggil berulang (idempoten).
+ */
+async function syncDebt(debt) {
+  const isHutang = debt.type === 'hutang';
+
+  // Pokok
+  await upsertLinkedFlow({
+    source: 'debt',
+    refId: `${debt._id}:prin`,
+    cashAccountId: debt.cashAccountId,
+    flow: isHutang ? 'in' : 'out',
+    amount: debt.amount,
+    category: isHutang ? 'Terima Pinjaman' : 'Beri Pinjaman',
+    date: debt.date,
+    note: debt.personName,
+  });
+
+  // Cicilan — bangun ulang dari kondisi terbaru
+  await removeLinkedFlowsByPrefix('debt', `${debt._id}:pay:`);
+  const pays = debt.payments || [];
+  for (let i = 0; i < pays.length; i++) {
+    const p = pays[i];
+    if (!p.cashAccountId) continue;
+    await upsertLinkedFlow({
+      source: 'debt',
+      refId: `${debt._id}:pay:${i}`,
+      cashAccountId: p.cashAccountId,
+      flow: isHutang ? 'out' : 'in',
+      amount: p.amount,
+      category: isHutang ? 'Bayar Hutang' : 'Terima Piutang',
+      date: p.date,
+      note: debt.personName,
+    });
+  }
+}
 
 // Create
 exports.createDebt = async (req, res) => {
   try {
-    const { type, personName, amount, date, reason, status } = req.body;
+    const { type, personName, amount, date, reason, status, cashAccountId } = req.body;
     if (!type || !personName || amount == null || !date) {
       return res.status(400).json({ message: 'Field wajib: type, personName, amount, date' });
     }
-    const debt = await Debt.create({ type, personName, amount, date, reason, status });
+    const debt = await Debt.create({ type, personName, amount, date, reason, status, cashAccountId: cashAccountId || null });
+    await syncDebt(debt);
     return res.status(201).json({ data: debt });
   } catch (err) {
     return res.status(500).json({ message: 'Gagal membuat data', error: err.message });
@@ -48,8 +90,10 @@ exports.getDebtById = async (req, res) => {
 exports.updateDebt = async (req, res) => {
   try {
     const updates = req.body;
+    if (updates.cashAccountId === '' ) updates.cashAccountId = null;
     const debt = await Debt.findByIdAndUpdate(req.params.id, updates, { new: true });
     if (!debt) return res.status(404).json({ message: 'Data tidak ditemukan' });
+    await syncDebt(debt);
     return res.json({ data: debt });
   } catch (err) {
     return res.status(500).json({ message: 'Gagal mengupdate data', error: err.message });
@@ -59,6 +103,8 @@ exports.updateDebt = async (req, res) => {
 // Delete
 exports.deleteDebt = async (req, res) => {
   try {
+    // Balikkan semua efek Cash (pokok + cicilan) sebelum hapus
+    await removeLinkedFlowsByPrefix('debt', `${req.params.id}:`);
     const debt = await Debt.findByIdAndDelete(req.params.id);
     if (!debt) return res.status(404).json({ message: 'Data tidak ditemukan' });
     return res.json({ message: 'Data dihapus' });
@@ -115,20 +161,21 @@ exports.updateStatus = async (req, res) => {
 // Add payment (partial repayment or collection)
 exports.addPayment = async (req, res) => {
   try {
-    const { amount, date, note } = req.body;
+    const { amount, date, note, cashAccountId } = req.body;
     if (amount == null || Number(amount) <= 0 || !date) {
       return res.status(400).json({ message: 'Field wajib: amount (>0) dan date' });
     }
     const debt = await Debt.findById(req.params.id);
     if (!debt) return res.status(404).json({ message: 'Data tidak ditemukan' });
 
-    debt.payments.push({ amount: Number(amount), date: new Date(date), note: note || '' });
+    debt.payments.push({ amount: Number(amount), date: new Date(date), note: note || '', cashAccountId: cashAccountId || null });
 
     // Recalculate total paid and status
     debt.paid = (debt.payments || []).reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
     debt.status = debt.paid >= debt.amount ? 'done' : 'onprogress';
 
     await debt.save();
+    await syncDebt(debt);
     return res.json({ data: debt });
   } catch (err) {
     return res.status(500).json({ message: 'Gagal menambah pembayaran', error: err.message });
@@ -138,7 +185,7 @@ exports.addPayment = async (req, res) => {
 // Update a specific payment entry (by index)
 exports.updatePayment = async (req, res) => {
   try {
-    const { amount, date, note } = req.body;
+    const { amount, date, note, cashAccountId } = req.body;
     const index = Number(req.params.index);
     if (amount == null || Number(amount) <= 0 || !date) {
       return res.status(400).json({ message: 'Field wajib: amount (>0) dan date' });
@@ -153,11 +200,13 @@ exports.updatePayment = async (req, res) => {
     debt.payments[index].amount = Number(amount);
     debt.payments[index].date = new Date(date);
     debt.payments[index].note = note || '';
+    if (cashAccountId !== undefined) debt.payments[index].cashAccountId = cashAccountId || null;
 
     debt.paid = (debt.payments || []).reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
     debt.status = debt.paid >= debt.amount ? 'done' : 'onprogress';
 
     await debt.save();
+    await syncDebt(debt);
     return res.json({ data: debt });
   } catch (err) {
     return res.status(500).json({ message: 'Gagal mengupdate pembayaran', error: err.message });
@@ -179,6 +228,7 @@ exports.deletePayment = async (req, res) => {
     debt.status = debt.paid >= debt.amount ? 'done' : 'onprogress';
 
     await debt.save();
+    await syncDebt(debt);
     return res.json({ data: debt });
   } catch (err) {
     return res.status(500).json({ message: 'Gagal menghapus pembayaran', error: err.message });

@@ -333,7 +333,7 @@ function ArusKas() {
                         <button onClick={() => handleDelete(f._id)} className="text-down hover:opacity-70 font-medium text-sm">Hapus</button>
                       </>
                     ) : (
-                      <span className="text-xs text-inkfaint italic">dari Aset</span>
+                      <span className="text-xs text-inkfaint italic">{f.source === 'debt' ? 'dari Hutang/Piutang' : 'dari Aset'}</span>
                     )}
                   </td>
                 </tr>

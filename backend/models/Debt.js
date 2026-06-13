@@ -28,11 +28,20 @@ const debtSchema = new mongoose.Schema({
     default: 0,
     min: 0,
   },
+  // Rekening Cash terkait pokok (saat dibuat). Opsional.
+  // hutang: uang masuk ke rekening ini; piutang: uang keluar dari rekening ini.
+  cashAccountId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'CashAccount',
+    default: null,
+  },
   payments: [
     {
       amount: { type: Number, required: true, min: 0 },
       date: { type: Date, required: true },
       note: { type: String, trim: true, default: '' },
+      // Rekening Cash untuk cicilan ini (opsional)
+      cashAccountId: { type: mongoose.Schema.Types.ObjectId, ref: 'CashAccount', default: null },
       _id: false,
     }
   ],

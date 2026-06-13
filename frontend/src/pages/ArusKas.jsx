@@ -112,7 +112,7 @@ function ArusKas() {
   }
 
   const toggleSelectAll = (e) => {
-    if (e.target.checked) setSelectedIds(new Set(flows.map(f => f._id)))
+    if (e.target.checked) setSelectedIds(new Set(flows.filter(f => !f.source || f.source === 'manual').map(f => f._id)))
     else setSelectedIds(new Set())
   }
 
@@ -309,25 +309,36 @@ function ArusKas() {
               </tr>
             </thead>
             <tbody>
-              {flows.map(f => (
+              {flows.map(f => {
+                const isManual = !f.source || f.source === 'manual'
+                const isIn = f.type === 'income' || (f.type === 'transfer' && f.flow === 'in')
+                const badge = f.type === 'transfer'
+                  ? { label: 'TRANSFER', cls: 'bg-accentsoft text-accentink' }
+                  : (f.type === 'income' ? { label: 'MASUK', cls: 'bg-upsoft text-upink' } : { label: 'KELUAR', cls: 'bg-downsoft text-downink' })
+                return (
                 <tr key={f._id} className={`border-b border-gray-200 hover:bg-gray-50 ${selectedIds.has(f._id) ? 'bg-accentsoft' : ''}`}>
-                  <td className="px-4 py-3 text-left"><input type="checkbox" className="w-4 h-4" checked={selectedIds.has(f._id)} onChange={() => toggleSelect(f._id)} /></td>
+                  <td className="px-4 py-3 text-left">{isManual && <input type="checkbox" className="w-4 h-4" checked={selectedIds.has(f._id)} onChange={() => toggleSelect(f._id)} />}</td>
                   <td className="px-4 py-3 text-sm">{new Date(f.date).toLocaleDateString('id-ID')}</td>
                   <td className="px-4 py-3 text-sm">
-                    <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${f.type === 'income' ? 'bg-upsoft text-upink' : 'bg-downsoft text-downink'}`}>
-                      {f.type === 'income' ? 'MASUK' : 'KELUAR'}
-                    </span>
+                    <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${badge.cls}`}>{badge.label}</span>
                   </td>
                   <td className="px-4 py-3 text-sm">{f.category}</td>
                   <td className="px-4 py-3 text-sm text-gray-600">{f.cashAccountId ? accountName(f.cashAccountId) : '—'}</td>
-                  <td className={`px-4 py-3 text-sm text-right font-semibold ${f.type === 'income' ? 'text-up' : 'text-down'}`}>{f.type === 'income' ? '+ ' : '− '}{formatCurrency(f.amount)}</td>
+                  <td className={`px-4 py-3 text-sm text-right font-semibold ${isIn ? 'text-up' : 'text-down'}`}>{isIn ? '+ ' : '− '}{formatCurrency(f.amount)}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 max-w-xs truncate" title={f.note || ''}>{f.note || '-'}</td>
                   <td className="px-4 py-3 text-center space-x-2 whitespace-nowrap">
-                    <button onClick={() => openEdit(f)} className="text-accentink hover:opacity-70 font-medium text-sm">Edit</button>
-                    <button onClick={() => handleDelete(f._id)} className="text-down hover:opacity-70 font-medium text-sm">Hapus</button>
+                    {isManual ? (
+                      <>
+                        <button onClick={() => openEdit(f)} className="text-accentink hover:opacity-70 font-medium text-sm">Edit</button>
+                        <button onClick={() => handleDelete(f._id)} className="text-down hover:opacity-70 font-medium text-sm">Hapus</button>
+                      </>
+                    ) : (
+                      <span className="text-xs text-inkfaint italic">dari Aset</span>
+                    )}
                   </td>
                 </tr>
-              ))}
+                )
+              })}
             </tbody>
           </table>
         )}

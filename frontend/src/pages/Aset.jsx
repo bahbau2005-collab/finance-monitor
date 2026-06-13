@@ -84,7 +84,7 @@ function Aset() {
         ...formData,
         nominal: Number.parseInt(formData.nominal, 10),
         quantity: formData.quantity ? toStoredQty(formData.assetType, formData.quantity) : 0,
-        cashAccountId: formData.txType === 'sell' ? (formData.cashAccountId || undefined) : undefined,
+        cashAccountId: formData.cashAccountId || undefined,
       })
       setInputSuccess(true)
       setFormData({ txType: 'buy', assetType: 'btc', assetName: '', nominal: '', quantity: '', cashAccountId: '', transactionDate: new Date().toISOString().split('T')[0], description: '' })
@@ -308,6 +308,7 @@ function Aset() {
       assetName: tx.assetName,
       nominal: tx.nominal,
       quantity: tx.quantity ? toInputQty(tx.assetType, tx.quantity) : '',
+      cashAccountId: tx.cashAccountId || '',
       transactionDate: new Date(tx.transactionDate).toISOString().split('T')[0],
       description: tx.description || '',
     })
@@ -331,6 +332,7 @@ function Aset() {
       assetName: editData.assetName,
       nominal: Number(editData.nominal),
       quantity: editData.quantity ? toStoredQty(editData.assetType, editData.quantity) : undefined,
+      cashAccountId: editData.cashAccountId || null,
       transactionDate: editData.transactionDate,
       description: editData.description,
     }
@@ -404,17 +406,15 @@ function Aset() {
               <label htmlFor="nominal" className="block text-sm font-medium text-gray-700 mb-2">{formData.txType === 'sell' ? 'Hasil Penjualan (Rp)' : 'Modal / Nominal Beli (Rp)'}</label>
               <input id="nominal" type="number" name="nominal" value={formData.nominal} onChange={handleInputChange} className="input-field" placeholder="5000000" min="0" />
             </div>
-            {formData.txType === 'sell' && (
-              <div>
-                <label htmlFor="cashAccountId" className="block text-sm font-medium text-gray-700 mb-2">Hasil masuk ke rekening</label>
-                <select id="cashAccountId" name="cashAccountId" value={formData.cashAccountId} onChange={handleInputChange} className="input-field">
-                  <option value="">— Tidak masuk Cash (catat saja) —</option>
-                  {cashAccounts.map(acc => (
-                    <option key={acc._id} value={acc._id}>{acc.name} (Rp {Number(acc.balance || 0).toLocaleString('id-ID')})</option>
-                  ))}
-                </select>
-              </div>
-            )}
+            <div>
+              <label htmlFor="cashAccountId" className="block text-sm font-medium text-gray-700 mb-2">{formData.txType === 'sell' ? 'Hasil masuk ke rekening' : 'Bayar dari rekening'}</label>
+              <select id="cashAccountId" name="cashAccountId" value={formData.cashAccountId} onChange={handleInputChange} className="input-field">
+                <option value="">— Tidak {formData.txType === 'sell' ? 'masuk' : 'dari'} Cash (catat saja) —</option>
+                {cashAccounts.map(acc => (
+                  <option key={acc._id} value={acc._id}>{acc.name} (Rp {Number(acc.balance || 0).toLocaleString('id-ID')})</option>
+                ))}
+              </select>
+            </div>
             <div>
               <label htmlFor="transactionDate" className="block text-sm font-medium text-gray-700 mb-2">Tanggal Transaksi</label>
               <input id="transactionDate" type="date" name="transactionDate" value={formData.transactionDate} onChange={handleInputChange} className="input-field" />
@@ -597,6 +597,15 @@ function Aset() {
                   )}
                 </div>
               )}
+              <div>
+                <label htmlFor="editCash" className="block text-sm font-medium text-gray-700 mb-1">{editData.txType === 'sell' ? 'Hasil masuk ke rekening' : 'Bayar dari rekening'}</label>
+                <select id="editCash" name="cashAccountId" value={editData.cashAccountId} onChange={handleEditChange} className="input-field">
+                  <option value="">— Tidak {editData.txType === 'sell' ? 'masuk' : 'dari'} Cash —</option>
+                  {cashAccounts.map(acc => (
+                    <option key={acc._id} value={acc._id}>{acc.name} (Rp {Number(acc.balance || 0).toLocaleString('id-ID')})</option>
+                  ))}
+                </select>
+              </div>
               <div>
                 <label htmlFor="editDescription" className="block text-sm font-medium text-gray-700 mb-1">Deskripsi</label>
                 <textarea id="editDescription" name="description" value={editData.description} onChange={handleEditChange} className="input-field" rows={3}></textarea>

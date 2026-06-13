@@ -44,6 +44,13 @@ const transactionSchema = new mongoose.Schema({
     default: 0,
     min: [0, 'Jumlah harus positif'],
   },
+  // Rekening Cash yang terkait (beli = tarik dari sini, jual = masuk ke sini).
+  // Opsional: null berarti tidak terhubung ke Cash.
+  cashAccountId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'CashAccount',
+    default: null,
+  },
   transactionDate: {
     type: Date,
     required: [true, 'Tanggal transaksi harus diisi'],

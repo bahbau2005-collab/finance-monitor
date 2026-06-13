@@ -43,11 +43,13 @@ exports.createCashFlow = async (req, res) => {
 
     const flow = new CashFlow({
       type,
+      flow: type === 'income' ? 'in' : 'out',
       amount: Number(amount),
       category: category || 'Lainnya',
       cashAccountId: cashAccountId || null,
       date: new Date(date),
       note: note || '',
+      source: 'manual',
     });
     await flow.save();
 
@@ -94,6 +96,9 @@ exports.updateCashFlow = async (req, res) => {
     if (!existing) {
       return res.status(404).json({ success: false, message: 'Data arus kas tidak ditemukan' });
     }
+    if (existing.source && existing.source !== 'manual') {
+      return res.status(400).json({ success: false, message: 'Entri ini otomatis dari menu lain. Ubah dari sumbernya (mis. menu Aset).' });
+    }
 
     const newType = type && ['income', 'expense'].includes(type) ? type : existing.type;
     const newAmount = amount != null ? Number(amount) : existing.amount;
@@ -137,6 +142,9 @@ exports.deleteCashFlow = async (req, res) => {
     const flow = await CashFlow.findById(id);
     if (!flow) {
       return res.status(404).json({ success: false, message: 'Data arus kas tidak ditemukan' });
+    }
+    if (flow.source && flow.source !== 'manual') {
+      return res.status(400).json({ success: false, message: 'Entri ini otomatis dari menu lain. Hapus dari sumbernya (mis. menu Aset).' });
     }
 
     await applyToAccount(flow.cashAccountId, flow.type, flow.amount, -1);

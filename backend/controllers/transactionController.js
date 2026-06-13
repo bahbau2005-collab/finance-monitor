@@ -1,5 +1,6 @@
 const Transaction = require('../models/Transaction');
 const CashAccount = require('../models/CashAccount');
+const { upsertLinkedFlow, removeLinkedFlow } = require('../lib/ledger');
 
 /**
  * Hitung sisa holding (quantity) sebuah aset saat ini.
@@ -54,25 +55,22 @@ exports.createTransaction = async (req, res) => {
 
     const qty = Number(quantity) || 0;
 
-    // Validasi khusus penjualan: holding harus cukup
-    let cashAccount = null;
-    if (type === 'sell') {
-      if (qty > 0) {
-        const holding = await getCurrentHolding(assetType, assetName);
-        if (qty > holding + 1e-9) {
-          return res.status(400).json({
-            success: false,
-            message: `Jumlah jual (${qty}) melebihi holding saat ini (${holding}) untuk ${assetName}`,
-          });
-        }
+    // Validasi penjualan: holding harus cukup
+    if (type === 'sell' && qty > 0) {
+      const holding = await getCurrentHolding(assetType, assetName);
+      if (qty > holding + 1e-9) {
+        return res.status(400).json({
+          success: false,
+          message: `Jumlah jual (${qty}) melebihi holding saat ini (${holding}) untuk ${assetName}`,
+        });
       }
+    }
 
-      // Jika ada rekening tujuan, hasil jual masuk ke Cash
-      if (cashAccountId) {
-        cashAccount = await CashAccount.findById(cashAccountId);
-        if (!cashAccount) {
-          return res.status(400).json({ success: false, message: 'Rekening Cash tujuan tidak ditemukan' });
-        }
+    // Validasi rekening Cash (jika dipilih)
+    if (cashAccountId) {
+      const acc = await CashAccount.findById(cashAccountId);
+      if (!acc) {
+        return res.status(400).json({ success: false, message: 'Rekening Cash tidak ditemukan' });
       }
     }
 
@@ -83,25 +81,31 @@ exports.createTransaction = async (req, res) => {
       nominal,
       quantity: qty,
       txType: type,
+      cashAccountId: cashAccountId || null,
       transactionDate: new Date(transactionDate),
       description: description || '',
     });
 
-    // Simpan ke database
     await transaction.save();
 
-    // Setelah transaksi tersimpan, tambahkan hasil jual ke rekening Cash
-    if (cashAccount) {
-      cashAccount.balance += Number(nominal);
-      cashAccount.lastUpdated = Date.now();
-      await cashAccount.save();
+    // Catat ke ledger sebagai transfer + ubah saldo Cash (beli = keluar, jual = masuk)
+    if (cashAccountId) {
+      await upsertLinkedFlow({
+        source: 'asset',
+        refId: transaction._id,
+        cashAccountId,
+        flow: type === 'sell' ? 'in' : 'out',
+        amount: nominal,
+        category: type === 'sell' ? 'Jual Aset' : 'Beli Aset',
+        date: transaction.transactionDate,
+        note: assetName,
+      });
     }
 
     res.status(201).json({
       success: true,
       message: type === 'sell' ? 'Penjualan aset berhasil dicatat' : 'Transaksi berhasil ditambahkan',
       data: transaction,
-      cashAccount: cashAccount || undefined,
     });
   } catch (error) {
     res.status(500).json({
@@ -234,7 +238,7 @@ exports.getTransactionById = async (req, res) => {
 exports.updateTransaction = async (req, res) => {
   try {
     const { id } = req.params;
-    const { assetType, assetName, nominal, transactionDate, description, quantity, txType } = req.body;
+    const { assetType, assetName, nominal, transactionDate, description, quantity, txType, cashAccountId } = req.body;
 
     const updatePayload = {
       assetType,
@@ -245,6 +249,7 @@ exports.updateTransaction = async (req, res) => {
     };
     if (quantity != null) updatePayload.quantity = Number(quantity);
     if (txType === 'buy' || txType === 'sell') updatePayload.txType = txType;
+    if (cashAccountId !== undefined) updatePayload.cashAccountId = cashAccountId || null;
 
     const transaction = await Transaction.findByIdAndUpdate(
       id,
@@ -258,6 +263,18 @@ exports.updateTransaction = async (req, res) => {
         message: 'Transaksi tidak ditemukan',
       });
     }
+
+    // Sinkronkan ledger: buat ulang transfer sesuai data terbaru (atau lepas bila tanpa rekening)
+    await upsertLinkedFlow({
+      source: 'asset',
+      refId: transaction._id,
+      cashAccountId: transaction.cashAccountId,
+      flow: transaction.txType === 'sell' ? 'in' : 'out',
+      amount: transaction.nominal,
+      category: transaction.txType === 'sell' ? 'Jual Aset' : 'Beli Aset',
+      date: transaction.transactionDate,
+      note: transaction.assetName,
+    });
 
     res.status(200).json({
       success: true,
@@ -280,6 +297,9 @@ exports.updateTransaction = async (req, res) => {
 exports.deleteTransaction = async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Balikkan efek ke Cash & hapus catatan transfer tertaut sebelum hapus transaksi
+    await removeLinkedFlow('asset', id);
 
     const transaction = await Transaction.findByIdAndDelete(id);
 

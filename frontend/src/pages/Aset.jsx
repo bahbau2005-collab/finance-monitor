@@ -30,6 +30,7 @@ function Aset() {
   const [editData, setEditData] = useState(null)
   const [savingEdit, setSavingEdit] = useState(false) // cegah double-submit edit transaksi
   const [deletePrompt, setDeletePrompt] = useState(null) // transaksi menunggu konfirmasi hapus (terhubung Cash)
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false) // konfirmasi hapus massal (terhubung Cash)
   const [expandedDesc, setExpandedDesc] = useState(new Set())
 
   const toggleDesc = (id) => {
@@ -153,16 +154,24 @@ function Aset() {
     else setSelectedIds(new Set())
   }
 
-  const handleBulkDelete = async () => {
-    if (selectedIds.size === 0) { alert('Pilih setidaknya satu transaksi'); return }
-    if (!globalThis.confirm(`Hapus ${selectedIds.size} transaksi?`)) return
+  const doBulkDelete = async (keepCash) => {
     try {
-      await Promise.all(Array.from(selectedIds).map(id => transactionService.delete(id)))
+      await Promise.all(Array.from(selectedIds).map(id => transactionService.delete(id, keepCash)))
       setSelectedIds(new Set())
+      setBulkDeleteOpen(false)
       fetchTransactions()
+      cashService.getAll().then(res => setCashAccounts(res.data?.data || [])).catch(() => {})
     } catch {
       alert('Gagal menghapus beberapa transaksi')
     }
+  }
+
+  const handleBulkDelete = () => {
+    if (selectedIds.size === 0) { alert('Pilih setidaknya satu transaksi'); return }
+    const anyCashLinked = transactions.some(t => selectedIds.has(t._id) && t.cashAccountId)
+    if (anyCashLinked) { setBulkDeleteOpen(true); return }
+    if (!globalThis.confirm(`Hapus ${selectedIds.size} transaksi?`)) return
+    doBulkDelete(false)
   }
 
   // Import/Export
@@ -645,6 +654,28 @@ function Aset() {
           </div>
           <div className="flex justify-end pt-4">
             <button onClick={() => setDeletePrompt(null)} className="btn btn-secondary">Batal</button>
+          </div>
+        </Modal>
+      )}
+
+      {/* MODAL: pilihan hapus massal (ada yang terhubung Cash) */}
+      {bulkDeleteOpen && (
+        <Modal open onClose={() => setBulkDeleteOpen(false)} title={`Hapus ${selectedIds.size} Transaksi`} subtitle="Sebagian terhubung ke Cash">
+          <p className="text-sm text-inksoft mb-4">
+            Ada transaksi terpilih yang terhubung ke Cash. Untuk semua yang terhubung, mau saldo Cash dikembalikan atau dipertahankan?
+          </p>
+          <div className="space-y-2">
+            <button onClick={() => doBulkDelete(false)} className="w-full text-left p-3 rounded-xl border border-line hover:bg-surface2 transition-colors">
+              <p className="font-medium text-ink">Kembalikan saldo Cash</p>
+              <p className="text-xs text-inkfaint">Saldo balik ke kondisi sebelum tiap transaksi (default).</p>
+            </button>
+            <button onClick={() => doBulkDelete(true)} className="w-full text-left p-3 rounded-xl border border-line hover:bg-surface2 transition-colors">
+              <p className="font-medium text-ink">Pertahankan saldo Cash</p>
+              <p className="text-xs text-inkfaint">Cuma hapus catatannya; saldo Cash dibiarkan seperti sekarang.</p>
+            </button>
+          </div>
+          <div className="flex justify-end pt-4">
+            <button onClick={() => setBulkDeleteOpen(false)} className="btn btn-secondary">Batal</button>
           </div>
         </Modal>
       )}

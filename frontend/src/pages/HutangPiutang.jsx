@@ -29,6 +29,7 @@ function HutangPiutang() {
   const [expandedPaymentId, setExpandedPaymentId] = useState(null)
   const [expandedReason, setExpandedReason] = useState(new Set())
   const [deletePrompt, setDeletePrompt] = useState(null) // debt menunggu konfirmasi hapus (terhubung Cash)
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false) // konfirmasi hapus massal (terhubung Cash)
 
   const toggleReason = (id) => {
     setExpandedReason(prev => {
@@ -236,20 +237,28 @@ function HutangPiutang() {
     doDelete(d._id, false)
   }
 
-  const handleBulkDelete = async () => {
-    if (selectedIds.size === 0) {
-      alert('Pilih setidaknya satu data')
-      return
-    }
-    if (!window.confirm(`Hapus ${selectedIds.size} data?`)) return
+  const doBulkDelete = async (keepCash) => {
     try {
-      await Promise.all(Array.from(selectedIds).map(id => debtService.delete(id)))
+      await Promise.all(Array.from(selectedIds).map(id => debtService.delete(id, keepCash)))
       setSelectedIds(new Set())
+      setBulkDeleteOpen(false)
       fetchDebts()
       refreshCash()
     } catch {
       alert('Gagal menghapus beberapa data')
     }
+  }
+
+  const handleBulkDelete = () => {
+    if (selectedIds.size === 0) {
+      alert('Pilih setidaknya satu data')
+      return
+    }
+    // Bila ada yang terhubung Cash, beri pilihan kembalikan/pertahankan saldo
+    const anyCashLinked = debts.some(d => selectedIds.has(d._id) && isCashLinked(d))
+    if (anyCashLinked) { setBulkDeleteOpen(true); return }
+    if (!window.confirm(`Hapus ${selectedIds.size} data?`)) return
+    doBulkDelete(false)
   }
 
   const toggleSelect = (id) => {
@@ -711,6 +720,28 @@ function HutangPiutang() {
           </div>
           <div className="flex justify-end pt-4">
             <button onClick={() => setDeletePrompt(null)} className="btn btn-secondary">Batal</button>
+          </div>
+        </Modal>
+      )}
+
+      {/* MODAL: pilihan hapus massal (ada yang terhubung Cash) */}
+      {bulkDeleteOpen && (
+        <Modal open onClose={() => setBulkDeleteOpen(false)} title={`Hapus ${selectedIds.size} Data`} subtitle="Sebagian terhubung ke Cash">
+          <p className="text-sm text-inksoft mb-4">
+            Ada data terpilih yang terhubung ke Cash. Untuk semua yang terhubung, mau saldo Cash dikembalikan ke kondisi sebelum transaksi, atau dipertahankan apa adanya?
+          </p>
+          <div className="space-y-2">
+            <button onClick={() => doBulkDelete(false)} className="w-full text-left p-3 rounded-xl border border-line hover:bg-surface2 transition-colors">
+              <p className="font-medium text-ink">Kembalikan saldo Cash</p>
+              <p className="text-xs text-inkfaint">Saldo balik ke kondisi sebelum tiap transaksi (default).</p>
+            </button>
+            <button onClick={() => doBulkDelete(true)} className="w-full text-left p-3 rounded-xl border border-line hover:bg-surface2 transition-colors">
+              <p className="font-medium text-ink">Pertahankan saldo Cash</p>
+              <p className="text-xs text-inkfaint">Cuma hapus catatannya; saldo Cash dibiarkan seperti sekarang.</p>
+            </button>
+          </div>
+          <div className="flex justify-end pt-4">
+            <button onClick={() => setBulkDeleteOpen(false)} className="btn btn-secondary">Batal</button>
           </div>
         </Modal>
       )}

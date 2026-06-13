@@ -259,7 +259,7 @@ function Dashboard({ dark }) {
                 >
                   {PIE_COLORS.map((color, i) => <Cell key={color} fill={`url(#dpie${i})`} />)}
                 </Pie>
-                <Tooltip formatter={(value) => `Rp ${Number(value).toLocaleString('id-ID')}`} contentStyle={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 10, color: 'var(--ink)' }} />
+                <Tooltip formatter={(value) => `Rp ${Number(value).toLocaleString('id-ID')}`} contentStyle={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 10 }} labelStyle={{ color: 'var(--ink)' }} itemStyle={{ color: 'var(--ink)' }} />
                 <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: 12 }} formatter={(value) => <span style={{ color: 'var(--ink-soft)' }}>{value}</span>} />
               </PieChart>
             </ResponsiveContainer>

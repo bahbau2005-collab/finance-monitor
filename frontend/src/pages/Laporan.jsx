@@ -135,7 +135,7 @@ function Laporan() {
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="label" tick={{ fontSize: 12 }} />
                   <YAxis tickFormatter={shortRp} tick={{ fontSize: 12 }} width={48} />
-                  <Tooltip formatter={(v) => formatCurrency(v)} />
+                  <Tooltip formatter={(v) => formatCurrency(v)} contentStyle={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 10 }} labelStyle={{ color: 'var(--ink)' }} itemStyle={{ color: 'var(--ink)' }} cursor={{ fill: 'var(--line)' }} />
                   <Legend />
                   <Bar dataKey="Pemasukan" fill="url(#barUp)" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="Pengeluaran" fill="url(#barDown)" radius={[4, 4, 0, 0]} />
@@ -166,7 +166,7 @@ function Laporan() {
                       <Pie data={expenseByCat} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} innerRadius={45} stroke="var(--surface)" strokeWidth={2}>
                         {expenseByCat.map((entry, idx) => <Cell key={entry.name} fill={`url(#lpie${idx % PIE_COLORS.length})`} />)}
                       </Pie>
-                      <Tooltip formatter={(v) => formatCurrency(v)} />
+                      <Tooltip formatter={(v) => formatCurrency(v)} contentStyle={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 10 }} labelStyle={{ color: 'var(--ink)' }} itemStyle={{ color: 'var(--ink)' }} cursor={{ fill: 'var(--line)' }} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>

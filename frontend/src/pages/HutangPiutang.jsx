@@ -28,6 +28,7 @@ function HutangPiutang() {
   const [paymentForm, setPaymentForm] = useState({ amount: '', date: new Date().toISOString().split('T')[0], note: '', cashAccountId: '' })
   const [expandedPaymentId, setExpandedPaymentId] = useState(null)
   const [expandedReason, setExpandedReason] = useState(new Set())
+  const [deletePrompt, setDeletePrompt] = useState(null) // debt menunggu konfirmasi hapus (terhubung Cash)
 
   const toggleReason = (id) => {
     setExpandedReason(prev => {
@@ -217,15 +218,22 @@ function HutangPiutang() {
     }
   }
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Hapus data ini? Saldo Cash terkait akan dikembalikan.')) return
+  const doDelete = async (id, keepCash) => {
     try {
-      await debtService.delete(id)
+      await debtService.delete(id, keepCash)
+      setDeletePrompt(null)
       fetchDebts()
       refreshCash()
     } catch {
       alert('Gagal menghapus data')
     }
+  }
+
+  const handleDelete = (d) => {
+    // Bila terhubung Cash, tampilkan pilihan kembalikan/pertahankan saldo
+    if (isCashLinked(d)) { setDeletePrompt(d); return }
+    if (!window.confirm('Hapus data ini?')) return
+    doDelete(d._id, false)
   }
 
   const handleBulkDelete = async () => {
@@ -263,13 +271,16 @@ function HutangPiutang() {
       if (updated) {
         setDebts(prev => prev.map(x => x._id === d._id ? updated : x))
       } else {
-        // fallback: refresh list
         fetchDebts()
       }
+      refreshCash() // tandai lunas bisa mengubah saldo Cash
     } catch {
       alert('Gagal mengubah status')
     }
   }
+
+  // Apakah data ini terhubung ke Cash? (pokok atau ada cicilan ber-rekening)
+  const isCashLinked = (d) => !!d?.cashAccountId || (d?.payments || []).some(p => p.cashAccountId)
 
   const openPayment = (d) => {
     setPaymentForId(d._id)
@@ -538,7 +549,11 @@ function HutangPiutang() {
                     <td className="px-4 py-3 text-sm">{d.personName}</td>
                     <td className="px-4 py-3 text-sm text-right text-up font-semibold">{formatCurrency(d.amount)}</td>
                     <td className="px-4 py-3 text-sm text-right">{formatCurrency(d.paid || 0)}</td>
-                    <td className="px-4 py-3 text-sm text-right">{formatCurrency(Math.max(0, (Number(d.amount)||0) - (Number(d.paid)||0)))}</td>
+                    <td className="px-4 py-3 text-sm text-right">
+                      {(Number(d.paid) || 0) > (Number(d.amount) || 0)
+                        ? <span className="text-up font-medium">+{formatCurrency((Number(d.paid) || 0) - (Number(d.amount) || 0))} lebih</span>
+                        : formatCurrency(Math.max(0, (Number(d.amount) || 0) - (Number(d.paid) || 0)))}
+                    </td>
                     <td className="px-4 py-3 text-sm">{new Date(d.date).toLocaleDateString('id-ID')}</td>
                     <td className="px-4 py-3 text-sm text-gray-600 max-w-xs">
                       {d.reason ? (
@@ -560,7 +575,7 @@ function HutangPiutang() {
                     <td className="px-4 py-3 text-sm text-center space-x-2">
                       <button onClick={() => setExpandedPaymentId(isExpanded ? null : d._id)} className="text-accentink hover:opacity-70 font-medium text-xs" title="Lihat riwayat pembayaran">📋</button>
                       <button onClick={() => startEdit(d)} className="text-accentink hover:opacity-70 font-medium text-xs">Edit</button>
-                      <button onClick={() => handleDelete(d._id)} className="text-down hover:opacity-70 font-medium text-xs">Hapus</button>
+                      <button onClick={() => handleDelete(d)} className="text-down hover:opacity-70 font-medium text-xs">Hapus</button>
                       <button onClick={() => openPayment(d)} className="text-accentink hover:opacity-70 font-medium text-xs">Bayar</button>
                     </td>
                   </tr>
@@ -677,6 +692,28 @@ function HutangPiutang() {
           </Modal>
         )
       })()}
+
+      {/* MODAL: pilihan hapus data terhubung Cash */}
+      {deletePrompt && (
+        <Modal open onClose={() => setDeletePrompt(null)} title="Hapus Data" subtitle={`${deletePrompt.type === 'hutang' ? 'Hutang' : 'Piutang'} · ${deletePrompt.personName}`}>
+          <p className="text-sm text-inksoft mb-4">
+            Data ini terhubung ke Cash. Saat dihapus, mau saldo Cash dikembalikan ke kondisi sebelum transaksi, atau dipertahankan apa adanya?
+          </p>
+          <div className="space-y-2">
+            <button onClick={() => doDelete(deletePrompt._id, false)} className="w-full text-left p-3 rounded-xl border border-line hover:bg-surface2 transition-colors">
+              <p className="font-medium text-ink">Kembalikan saldo Cash</p>
+              <p className="text-xs text-inkfaint">Saldo balik ke kondisi sebelum transaksi ini (default).</p>
+            </button>
+            <button onClick={() => doDelete(deletePrompt._id, true)} className="w-full text-left p-3 rounded-xl border border-line hover:bg-surface2 transition-colors">
+              <p className="font-medium text-ink">Pertahankan saldo Cash</p>
+              <p className="text-xs text-inkfaint">Cuma hapus catatannya; saldo Cash dibiarkan seperti sekarang.</p>
+            </button>
+          </div>
+          <div className="flex justify-end pt-4">
+            <button onClick={() => setDeletePrompt(null)} className="btn btn-secondary">Batal</button>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }

@@ -11,12 +11,15 @@ async function applyCashDelta(accountId, delta) {
   await acc.save();
 }
 
-/** Hapus cashflow transfer yang tertaut ke sebuah sumber + balikkan efek saldonya. */
-async function removeLinkedFlow(source, refId) {
+/**
+ * Hapus cashflow transfer yang tertaut ke sebuah sumber.
+ * reverse=true (default): balikkan efek saldonya. reverse=false: saldo dipertahankan.
+ */
+async function removeLinkedFlow(source, refId, reverse = true) {
   if (!source || !refId) return;
   const flows = await CashFlow.find({ source, refId: String(refId) });
   for (const f of flows) {
-    await applyCashDelta(f.cashAccountId, f.flow === 'in' ? -f.amount : f.amount);
+    if (reverse) await applyCashDelta(f.cashAccountId, f.flow === 'in' ? -f.amount : f.amount);
     await f.deleteOne();
   }
 }
@@ -46,11 +49,11 @@ async function upsertLinkedFlow({ source, refId, cashAccountId, flow, amount, ca
 }
 
 /** Hapus semua cashflow tertaut yang refId-nya diawali prefix tertentu (mis. semua cicilan sebuah hutang). */
-async function removeLinkedFlowsByPrefix(source, refIdPrefix) {
+async function removeLinkedFlowsByPrefix(source, refIdPrefix, reverse = true) {
   if (!source || !refIdPrefix) return;
   const flows = await CashFlow.find({ source, refId: { $regex: `^${refIdPrefix}` } });
   for (const f of flows) {
-    await applyCashDelta(f.cashAccountId, f.flow === 'in' ? -f.amount : f.amount);
+    if (reverse) await applyCashDelta(f.cashAccountId, f.flow === 'in' ? -f.amount : f.amount);
     await f.deleteOne();
   }
 }

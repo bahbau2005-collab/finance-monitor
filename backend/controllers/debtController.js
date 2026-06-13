@@ -103,8 +103,9 @@ exports.updateDebt = async (req, res) => {
 // Delete
 exports.deleteDebt = async (req, res) => {
   try {
-    // Balikkan semua efek Cash (pokok + cicilan) sebelum hapus
-    await removeLinkedFlowsByPrefix('debt', `${req.params.id}:`);
+    // keepCash=true: pertahankan saldo Cash (hanya hapus catatan). Default: balikkan saldo.
+    const keepCash = req.query.keepCash === 'true';
+    await removeLinkedFlowsByPrefix('debt', `${req.params.id}:`, !keepCash);
     const debt = await Debt.findByIdAndDelete(req.params.id);
     if (!debt) return res.status(404).json({ message: 'Data tidak ditemukan' });
     return res.json({ message: 'Data dihapus' });
@@ -125,29 +126,32 @@ exports.updateStatus = async (req, res) => {
     if (!debt) return res.status(404).json({ message: 'Data tidak ditemukan' });
 
     if (status === 'done') {
-      // If not fully paid yet, force to done and snapshot current progress
-      const alreadyFullyPaid = Number(debt.paid || 0) >= Number(debt.amount || 0);
-      if (!alreadyFullyPaid) {
+      // Bila belum lunas, lunaskan sisa sebagai "pelunasan" + masukkan ke Cash (jika debt terhubung rekening)
+      const remaining = Number(debt.amount || 0) - Number(debt.paid || 0);
+      if (remaining > 0) {
         debt.forcedDoneSnapshot = {
           paid: Number(debt.paid || 0),
-          payments: (debt.payments || []).map(p => ({ amount: p.amount, date: p.date, note: p.note })),
+          payments: (debt.payments || []).map(p => ({ amount: p.amount, date: p.date, note: p.note, cashAccountId: p.cashAccountId })),
         };
+        debt.payments.push({ amount: remaining, date: new Date(), note: 'Pelunasan (tandai lunas)', cashAccountId: debt.cashAccountId || null });
         debt.paid = Number(debt.amount || 0);
       }
       debt.status = 'done';
       await debt.save();
+      await syncDebt(debt);
       return res.json({ data: debt });
     }
 
-    // status === 'onprogress': if previously forced done, restore snapshot
+    // status === 'onprogress': if previously forced done, restore snapshot (hapus pelunasan + balikkan Cash)
     if (status === 'onprogress') {
       if (debt.forcedDoneSnapshot && debt.forcedDoneSnapshot.paid != null) {
         debt.paid = Number(debt.forcedDoneSnapshot.paid || 0);
-        debt.payments = (debt.forcedDoneSnapshot.payments || []).map(p => ({ amount: p.amount, date: p.date, note: p.note }));
+        debt.payments = (debt.forcedDoneSnapshot.payments || []).map(p => ({ amount: p.amount, date: p.date, note: p.note, cashAccountId: p.cashAccountId }));
         debt.forcedDoneSnapshot = { paid: null, payments: [] };
       }
       debt.status = 'onprogress';
       await debt.save();
+      await syncDebt(debt);
       return res.json({ data: debt });
     }
 

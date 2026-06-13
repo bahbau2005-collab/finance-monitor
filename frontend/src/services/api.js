@@ -86,8 +86,8 @@ export const transactionService = {
   // Update transaksi
   update: (id, data) => api.put(`/transactions/${id}`, data),
 
-  // Hapus transaksi
-  delete: (id) => api.delete(`/transactions/${id}`),
+  // Hapus transaksi (keepCash=true: pertahankan saldo Cash)
+  delete: (id, keepCash) => api.delete(`/transactions/${id}${keepCash ? '?keepCash=true' : ''}`),
 
   // Import bulk transactions (array)
   importTransactions: (payload) => api.post('/transactions/import', payload),
@@ -153,6 +153,15 @@ export const targetService = {
 };
 
 // ============================================
+// BUDGET (BATAS PENGELUARAN) ENDPOINTS
+// ============================================
+
+export const budgetService = {
+  get: () => api.get('/budget'),
+  update: (data) => api.put('/budget', data),
+};
+
+// ============================================
 // DEBT & RECEIVABLE ENDPOINTS
 // ============================================
 
@@ -165,7 +174,7 @@ export const debtService = {
   addPayment: (id, payload) => api.post(`/debts/${id}/payments`, payload),
   updatePayment: (id, index, payload) => api.put(`/debts/${id}/payments/${index}`, payload),
   deletePayment: (id, index) => api.delete(`/debts/${id}/payments/${index}`),
-  delete: (id) => api.delete(`/debts/${id}`),
+  delete: (id, keepCash) => api.delete(`/debts/${id}${keepCash ? '?keepCash=true' : ''}`),
 };
 
 // ============================================

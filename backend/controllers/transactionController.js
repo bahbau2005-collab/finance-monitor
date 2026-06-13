@@ -298,8 +298,9 @@ exports.deleteTransaction = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Balikkan efek ke Cash & hapus catatan transfer tertaut sebelum hapus transaksi
-    await removeLinkedFlow('asset', id);
+    // keepCash=true: pertahankan saldo Cash (hanya hapus catatan). Default: balikkan saldo.
+    const keepCash = req.query.keepCash === 'true';
+    await removeLinkedFlow('asset', id, !keepCash);
 
     const transaction = await Transaction.findByIdAndDelete(id);
 

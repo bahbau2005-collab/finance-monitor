@@ -9,6 +9,7 @@ import Cash from './pages/Cash'
 import ArusKas from './pages/ArusKas'
 import Laporan from './pages/Laporan'
 import Target from './pages/Target'
+import Anggaran from './pages/Anggaran'
 import HutangPiutang from './pages/HutangPiutang'
 import Pengaturan from './pages/Pengaturan'
 import Login from './pages/Login'
@@ -77,6 +78,14 @@ const TargetIcon = () => (
     <circle cx="12" cy="12" r="8" />
     <circle cx="12" cy="12" r="4" />
     <circle cx="12" cy="12" r="0.6" fill="currentColor" />
+  </svg>
+)
+
+const AnggaranIcon = () => (
+  <svg {...iconProps}>
+    <path d="M12 3a9 9 0 109 9" />
+    <path d="M12 12l5-3" />
+    <path d="M21 7a9 9 0 00-9-4" opacity="0.5" />
   </svg>
 )
 
@@ -251,6 +260,19 @@ function AppContent({ onLogout, dark, onToggleTheme }) {
               <span>Target</span>
             </Link>
 
+            {/* Anggaran Menu */}
+            <Link
+              to="/anggaran"
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                location.pathname === '/anggaran'
+                  ? 'bg-accentsoft text-accentink shadow-sm'
+                  : 'text-inksoft hover:bg-surface2 hover:text-ink'
+              }`}
+            >
+              <AnggaranIcon />
+              <span>Anggaran</span>
+            </Link>
+
             {/* Pengaturan Menu */}
             <Link
               to="/pengaturan"
@@ -279,6 +301,7 @@ function AppContent({ onLogout, dark, onToggleTheme }) {
               <Route path="/arus-kas" element={<ArusKas />} />
               <Route path="/laporan-keuangan" element={<Laporan />} />
               <Route path="/target" element={<Target />} />
+              <Route path="/anggaran" element={<Anggaran />} />
               <Route path="/pengaturan" element={<Pengaturan dark={dark} onToggleTheme={onToggleTheme} onOpenPassword={() => setPwOpen(true)} onLogout={onLogout} />} />
               <Route path="/hutang-piutang" element={<HutangPiutang />} />
             </Routes>

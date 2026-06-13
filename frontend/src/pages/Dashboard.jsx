@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
-import { transactionService, cashService, debtService } from '../services/api'
+import { Link } from 'react-router-dom'
+import { transactionService, cashService, debtService, budgetService, cashFlowService } from '../services/api'
+import { computeSpent } from '../lib/budget'
 import {
   ResponsiveContainer,
   PieChart,
@@ -26,6 +28,7 @@ function Dashboard({ dark }) {
   const [error, setError] = useState(null)
   const [totalCash, setTotalCash] = useState(0)
   const [debtTotals, setDebtTotals] = useState({ hutang: 0, piutang: 0, hutangRemaining: 0, piutangRemaining: 0 })
+  const [budget, setBudget] = useState({ limits: { daily: 0, weekly: 0, monthly: 0 }, spent: { daily: 0, weekly: 0, monthly: 0 } })
 
   useEffect(() => {
     fetchDashboardData()
@@ -34,11 +37,16 @@ function Dashboard({ dark }) {
   const fetchDashboardData = async () => {
     try {
       setLoading(true)
-      const [response, cashResp, debtsResp] = await Promise.all([
+      const [response, cashResp, debtsResp, budgetResp, flowsResp] = await Promise.all([
         transactionService.getDashboardSummary(),
         cashService.getAll(),
         debtService.getAll(),
+        budgetService.get(),
+        cashFlowService.getAll(),
       ])
+
+      const limits = budgetResp.data?.data || { daily: 0, weekly: 0, monthly: 0 }
+      setBudget({ limits, spent: computeSpent(flowsResp.data?.data || []) })
 
       setSummary(response.data.data)
       const cashAccounts = cashResp.data.data || []
@@ -136,6 +144,38 @@ function Dashboard({ dark }) {
           <p className="text-inkfaint text-[11px] mt-1.5">Yang belum masuk</p>
         </div>
       </div>
+
+      {/* ANGGARAN PENGELUARAN */}
+      {(budget.limits.daily > 0 || budget.limits.weekly > 0 || budget.limits.monthly > 0) && (
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base lg:text-lg font-bold text-ink">Anggaran Pengeluaran</h3>
+            <Link to="/anggaran" className="text-xs text-accentink hover:opacity-70 font-medium">Atur →</Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[['daily', 'Harian'], ['weekly', 'Mingguan'], ['monthly', 'Bulanan']].map(([k, label]) => {
+              const limit = budget.limits[k]
+              const spent = budget.spent[k]
+              if (!limit || limit <= 0) return null
+              const pct = (spent / limit) * 100
+              const over = spent > limit
+              const color = pct >= 100 ? 'var(--down-fill)' : (pct >= 80 ? 'var(--accent)' : 'var(--up-fill)')
+              return (
+                <div key={k} className="bg-surface2 rounded-xl p-4 border border-line">
+                  <div className="flex justify-between text-xs mb-1.5">
+                    <span className="text-inksoft">{label}</span>
+                    <span style={{ color }} className="font-medium">{pct.toFixed(0)}%</span>
+                  </div>
+                  <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: 'var(--line)' }}>
+                    <div className="h-full rounded-full" style={{ width: `${Math.min(100, pct)}%`, background: color }}></div>
+                  </div>
+                  <p className="text-[11px] mt-1.5 text-inkfaint">Rp {Number(spent).toLocaleString('id-ID')} / Rp {Number(limit).toLocaleString('id-ID')}{over ? ' · lewat batas!' : ''}</p>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ASSET TYPE BREAKDOWN */}
       {byAssetType.length > 0 && (

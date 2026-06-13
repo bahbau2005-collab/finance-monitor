@@ -54,6 +54,7 @@ const debtSchema = new mongoose.Schema({
         amount: { type: Number, min: 0 },
         date: { type: Date },
         note: { type: String, trim: true, default: '' },
+        cashAccountId: { type: mongoose.Schema.Types.ObjectId, ref: 'CashAccount', default: null },
         _id: false,
       }
     ],

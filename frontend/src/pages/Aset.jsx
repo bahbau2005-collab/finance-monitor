@@ -29,6 +29,7 @@ function Aset() {
   const [editingId, setEditingId] = useState(null)
   const [editData, setEditData] = useState(null)
   const [savingEdit, setSavingEdit] = useState(false) // cegah double-submit edit transaksi
+  const [deletePrompt, setDeletePrompt] = useState(null) // transaksi menunggu konfirmasi hapus (terhubung Cash)
   const [expandedDesc, setExpandedDesc] = useState(new Set())
 
   const toggleDesc = (id) => {
@@ -123,14 +124,22 @@ function Aset() {
     setFilters(prev => ({ ...prev, [name]: value }))
   }
 
-  const handleDelete = async (id) => {
-    if (!globalThis.confirm('Yakin ingin menghapus transaksi ini?')) return
+  const doDelete = async (id, keepCash) => {
     try {
-      await transactionService.delete(id)
+      await transactionService.delete(id, keepCash)
       setTransactions(prev => prev.filter(t => t._id !== id))
+      setDeletePrompt(null)
+      cashService.getAll().then(res => setCashAccounts(res.data?.data || [])).catch(() => {})
     } catch {
       alert('Gagal menghapus transaksi')
     }
+  }
+
+  const handleDelete = (tx) => {
+    // Jika terhubung Cash, beri pilihan kembalikan/pertahankan saldo
+    if (tx.cashAccountId) { setDeletePrompt(tx); return }
+    if (!globalThis.confirm('Yakin ingin menghapus transaksi ini?')) return
+    doDelete(tx._id, false)
   }
 
   const handleSelectRow = (id) => {
@@ -543,7 +552,7 @@ function Aset() {
                   </td>
                   <td className="px-4 py-3 text-center space-x-2">
                     <button onClick={() => openEdit(tx)} className="text-accentink hover:opacity-70 font-medium text-sm">Edit</button>
-                    <button onClick={() => handleDelete(tx._id)} className="text-down hover:opacity-70 font-medium text-sm">Hapus</button>
+                    <button onClick={() => handleDelete(tx)} className="text-down hover:opacity-70 font-medium text-sm">Hapus</button>
                   </td>
                 </tr>
               ))}
@@ -615,6 +624,28 @@ function Aset() {
                 <button type="submit" className="btn btn-primary w-full sm:w-auto disabled:opacity-60 disabled:cursor-not-allowed" disabled={savingEdit}>{savingEdit ? 'Menyimpan...' : 'Simpan Perubahan'}</button>
               </div>
             </form>
+        </Modal>
+      )}
+
+      {/* MODAL: pilihan hapus transaksi terhubung Cash */}
+      {deletePrompt && (
+        <Modal open onClose={() => setDeletePrompt(null)} title="Hapus Transaksi" subtitle={`${deletePrompt.txType === 'sell' ? 'Jual' : 'Beli'} · ${deletePrompt.assetName}`}>
+          <p className="text-sm text-inksoft mb-4">
+            Transaksi ini terhubung ke Cash. Saat dihapus, mau saldo Cash dikembalikan ke kondisi sebelum transaksi, atau dipertahankan apa adanya?
+          </p>
+          <div className="space-y-2">
+            <button onClick={() => doDelete(deletePrompt._id, false)} className="w-full text-left p-3 rounded-xl border border-line hover:bg-surface2 transition-colors">
+              <p className="font-medium text-ink">Kembalikan saldo Cash</p>
+              <p className="text-xs text-inkfaint">Saldo balik ke kondisi sebelum transaksi ini (default).</p>
+            </button>
+            <button onClick={() => doDelete(deletePrompt._id, true)} className="w-full text-left p-3 rounded-xl border border-line hover:bg-surface2 transition-colors">
+              <p className="font-medium text-ink">Pertahankan saldo Cash</p>
+              <p className="text-xs text-inkfaint">Cuma hapus catatannya; saldo Cash dibiarkan seperti sekarang.</p>
+            </button>
+          </div>
+          <div className="flex justify-end pt-4">
+            <button onClick={() => setDeletePrompt(null)} className="btn btn-secondary">Batal</button>
+          </div>
         </Modal>
       )}
 

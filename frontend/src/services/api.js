@@ -67,6 +67,8 @@ export const authService = {
   login: (password) => api.post('/auth/login', { password }),
   verify: () => api.get('/auth/verify'),
   changePassword: (currentPassword, newPassword) => api.post('/auth/change-password', { currentPassword, newPassword }),
+  forgotPassword: () => api.post('/auth/forgot'),
+  resetPassword: (code, newPassword) => api.post('/auth/reset', { code, newPassword }),
 };
 
 // ============================================

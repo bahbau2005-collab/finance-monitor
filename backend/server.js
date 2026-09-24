@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const mongoose = require('mongoose');
 const cors = require('cors');
 const connectDB = require('./db');
 
@@ -67,6 +68,28 @@ app.get('/api/health', (req, res) => {
     message: 'Backend is running',
     timestamp: new Date(),
   });
+});
+
+// Keep-alive / ping — dipanggil otomatis oleh Vercel Cron (lihat vercel.json)
+// supaya cluster MongoDB Atlas gratis tidak pernah "tidur" (auto-pause ~60 hari idle).
+// Middleware DB di atas sudah memastikan koneksi terjalin sebelum handler ini jalan;
+// kita jalankan perintah 'ping' ringan agar terhitung sebagai aktivitas nyata di Atlas.
+// Diamankan dengan CRON_SECRET (Vercel Cron mengirim header Authorization: Bearer <CRON_SECRET>).
+app.get('/api/ping', async (req, res) => {
+  const secret = process.env.CRON_SECRET;
+  if (secret) {
+    const authOk = req.headers.authorization === `Bearer ${secret}`;
+    const queryOk = req.query.secret === secret; // fallback untuk tes manual
+    if (!authOk && !queryOk) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+  }
+  try {
+    await mongoose.connection.db.command({ ping: 1 });
+    res.status(200).json({ success: true, message: 'pong', timestamp: new Date() });
+  } catch (err) {
+    res.status(503).json({ success: false, message: 'DB tidak merespon', error: err.message });
+  }
 });
 
 // Auth routes (login) — TIDAK dikunci, ini pintu masuknya

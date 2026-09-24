@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 const cors = require('cors');
 const connectDB = require('./db');
 
@@ -75,14 +76,16 @@ app.get('/api/health', (req, res) => {
 // Middleware DB di atas sudah memastikan koneksi terjalin sebelum handler ini jalan;
 // kita jalankan perintah 'ping' ringan agar terhitung sebagai aktivitas nyata di Atlas.
 // Diamankan dengan CRON_SECRET (Vercel Cron mengirim header Authorization: Bearer <CRON_SECRET>).
+// Tes manual: Vercel → project backend → Cron Jobs → tombol "Run".
+const safeEqual = (a, b) => {
+  const ba = Buffer.from(String(a));
+  const bb = Buffer.from(String(b));
+  return ba.length === bb.length && crypto.timingSafeEqual(ba, bb);
+};
 app.get('/api/ping', async (req, res) => {
   const secret = process.env.CRON_SECRET;
-  if (secret) {
-    const authOk = req.headers.authorization === `Bearer ${secret}`;
-    const queryOk = req.query.secret === secret; // fallback untuk tes manual
-    if (!authOk && !queryOk) {
-      return res.status(401).json({ success: false, message: 'Unauthorized' });
-    }
+  if (secret && !safeEqual(req.headers.authorization || '', `Bearer ${secret}`)) {
+    return res.status(401).json({ success: false, message: 'Unauthorized' });
   }
   try {
     await mongoose.connection.db.command({ ping: 1 });

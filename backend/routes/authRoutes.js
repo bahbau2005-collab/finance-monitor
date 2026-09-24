@@ -5,8 +5,19 @@ const crypto = require('crypto');
 const { requireAuth, JWT_SECRET } = require('../middleware/auth');
 const Setting = require('../models/Setting');
 const { sendEmail } = require('../lib/email');
+const { clientIp, consume, reset, formatWait } = require('../lib/rateLimit');
 
 const router = express.Router();
+
+// Batas percobaan (anti brute-force / spam)
+const MIN = 60 * 1000;
+const LOGIN_PER_IP = { max: 5, windowMs: 15 * MIN, lockMs: 15 * MIN };
+const LOGIN_GLOBAL = { max: 30, windowMs: 15 * MIN, lockMs: 15 * MIN }; // kalau penyerang ganti-ganti IP
+const RESET_CODE_TRIES = { max: 5, windowMs: 10 * MIN, lockMs: 10 * MIN }; // lewat → kode hangus
+const FORGOT_COOLDOWN = { max: 1, windowMs: 1 * MIN, lockMs: 1 * MIN };
+const FORGOT_HOURLY = { max: 5, windowMs: 60 * MIN, lockMs: 60 * MIN };
+
+const tooMany = (res, message) => res.status(429).json({ success: false, message });
 
 // Password awal dari environment variable. Dipakai HANYA jika belum pernah
 // diganti lewat web (yaitu belum ada hash tersimpan di database).
@@ -37,10 +48,21 @@ router.post('/login', async (req, res) => {
   }
 
   try {
+    const ipKey = `login:ip:${clientIp(req)}`;
+    const perIp = await consume(ipKey, LOGIN_PER_IP);
+    if (!perIp.allowed) {
+      return tooMany(res, `Terlalu banyak percobaan login. Coba lagi dalam ${formatWait(perIp.retryAfter)}.`);
+    }
+    const global = await consume('login:global', LOGIN_GLOBAL);
+    if (!global.allowed) {
+      return tooMany(res, `Login dikunci sementara karena terlalu banyak percobaan. Coba lagi dalam ${formatWait(global.retryAfter)}.`);
+    }
+
     const ok = await verifyPassword(password);
     if (!ok) {
       return res.status(401).json({ success: false, message: 'Password salah' });
     }
+    await reset(ipKey);
     const token = jwt.sign({ role: 'owner' }, JWT_SECRET, { expiresIn: '30d' });
     res.status(200).json({ success: true, message: 'Login berhasil', token });
   } catch (err) {
@@ -99,12 +121,22 @@ router.post('/change-password', requireAuth, async (req, res) => {
  */
 router.post('/forgot', async (req, res) => {
   try {
+    const cooldown = await consume('forgot:cooldown', FORGOT_COOLDOWN);
+    if (!cooldown.allowed) {
+      return tooMany(res, `Tunggu ${formatWait(cooldown.retryAfter)} sebelum minta kode lagi.`);
+    }
+    const hourly = await consume('forgot:hourly', FORGOT_HOURLY);
+    if (!hourly.allowed) {
+      return tooMany(res, `Terlalu sering minta kode. Coba lagi dalam ${formatWait(hourly.retryAfter)}.`);
+    }
+
     const to = process.env.RECOVERY_EMAIL || 'bahbau2005@gmail.com';
     const code = String(crypto.randomInt(100000, 1000000)); // 6 digit
     const hash = await bcrypt.hash(code, 10);
     const exp = Date.now() + 10 * 60 * 1000; // 10 menit
     await Setting.findOneAndUpdate({ key: 'reset_code' }, { value: hash, updatedAt: Date.now() }, { upsert: true });
     await Setting.findOneAndUpdate({ key: 'reset_code_exp' }, { value: String(exp), updatedAt: Date.now() }, { upsert: true });
+    await reset('reset:code'); // kode baru → jatah tebakan baru
 
     await sendEmail({
       to,
@@ -145,10 +177,20 @@ router.post('/reset', async (req, res) => {
     if (Date.now() > Number(expDoc.value)) {
       return res.status(400).json({ success: false, message: 'Kode sudah kedaluwarsa. Kirim ulang kode.' });
     }
+
+    // Maks 5 tebakan per kode; lewat dari itu kode dihanguskan
+    const attempt = await consume('reset:code', RESET_CODE_TRIES);
+    if (!attempt.allowed) {
+      await Setting.deleteOne({ key: 'reset_code' });
+      await Setting.deleteOne({ key: 'reset_code_exp' });
+      return tooMany(res, 'Terlalu banyak kode salah. Kode sudah hangus, kirim ulang kode baru.');
+    }
+
     const ok = await bcrypt.compare(String(code), stored.value);
     if (!ok) {
       return res.status(400).json({ success: false, message: 'Kode salah.' });
     }
+    await reset('reset:code');
 
     const hash = await bcrypt.hash(String(newPassword), 10);
     await Setting.findOneAndUpdate({ key: PASSWORD_KEY }, { value: hash, updatedAt: Date.now() }, { upsert: true });
